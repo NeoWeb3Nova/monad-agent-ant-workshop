@@ -1,0 +1,290 @@
+/* Visual asset layer for the AntForge colony dashboard.
+   Loaded after App.css so the business components and data flow remain untouched. */
+
+.colony-stage {
+  background-color: #05060d !important;
+  background-image:
+    linear-gradient(180deg, rgba(3, 3, 10, 0.02), rgba(3, 2, 9, 0.28)),
+    url('/colony/ant-colony-diorama.svg') !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: cover !important;
+  border-color: rgba(159, 113, 255, 0.25) !important;
+  box-shadow:
+    inset 0 0 90px rgba(27, 11, 51, 0.34),
+    0 24px 80px rgba(0, 0, 0, 0.46) !important;
+}
+
+.colony-stage .sand-layer {
+  display: none !important;
+}
+
+.colony-stage::before {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  content: '';
+  background-image:
+    url('/ants/ant-scout.svg'),
+    url('/ants/ant-carrier.svg'),
+    url('/ants/ant-worker.svg'),
+    url('/ants/ant-worker.svg'),
+    url('/ants/ant-carrier.svg');
+  background-position:
+    43% 28%,
+    62% 36%,
+    46% 48%,
+    55% 63%,
+    40% 76%;
+  background-repeat: no-repeat;
+  background-size: 30px 30px, 34px 34px, 27px 27px, 25px 25px, 31px 31px;
+  filter: drop-shadow(0 0 8px rgba(170, 117, 255, 0.82));
+  opacity: 0.86;
+  animation: ambient-ant-breathe 3.6s ease-in-out infinite;
+}
+
+.colony-stage::after {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  content: '';
+  background:
+    radial-gradient(circle at 50% 17%, rgba(164, 108, 255, 0.14), transparent 20%),
+    radial-gradient(circle at 50% 54%, transparent 30%, rgba(0, 0, 0, 0.18) 78%),
+    linear-gradient(180deg, transparent 65%, rgba(3, 2, 9, 0.28));
+}
+
+.colony-vignette {
+  z-index: 2 !important;
+  background:
+    radial-gradient(circle at 50% 45%, transparent 48%, rgba(0, 0, 0, 0.34) 100%),
+    linear-gradient(180deg, rgba(3, 2, 8, 0), rgba(3, 2, 8, 0.25)) !important;
+}
+
+.pheromone-network {
+  z-index: 4 !important;
+  opacity: 0.86;
+  mix-blend-mode: screen;
+}
+
+.chamber-position,
+.colony-caption {
+  z-index: 6 !important;
+}
+
+.queen-position { top: 17% !important; }
+.repair-position,
+.color-position { top: 30% !important; }
+.guard-position { top: 56% !important; }
+.story-position,
+.treasury-position { top: 73% !important; }
+.rogue-position { top: 91% !important; }
+
+.queen-core,
+.task-chamber,
+.guard-chamber,
+.treasury-chamber,
+.rogue-gate {
+  border-color: rgba(184, 143, 255, 0.28) !important;
+  background: linear-gradient(145deg, rgba(14, 9, 29, 0.83), rgba(7, 7, 16, 0.69)) !important;
+  box-shadow:
+    inset 0 0 26px rgba(139, 92, 246, 0.09),
+    0 0 34px rgba(53, 25, 94, 0.2) !important;
+  backdrop-filter: blur(5px) saturate(1.15) !important;
+}
+
+.task-chamber,
+.guard-chamber,
+.treasury-chamber,
+.rogue-gate,
+.queen-core {
+  overflow: visible !important;
+}
+
+.task-chamber::after,
+.guard-chamber::after,
+.treasury-chamber::after,
+.rogue-gate::after {
+  position: absolute;
+  right: -15px;
+  bottom: -16px;
+  width: 48px;
+  height: 48px;
+  content: '';
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  filter: drop-shadow(0 0 9px rgba(163, 116, 255, 0.8));
+  pointer-events: none;
+}
+
+.repair-position::after {
+  background-image: url('/ants/ant-worker.svg');
+}
+
+.color-position::after {
+  background-image: url('/ants/ant-carrier.svg');
+}
+
+.story-position::after {
+  background-image: url('/ants/ant-scout.svg');
+}
+
+.guard-chamber::after {
+  background-image: url('/ants/ant-guard.svg');
+}
+
+.treasury-chamber::after {
+  background-image: url('/ants/ant-carrier.svg');
+}
+
+.rogue-gate::after {
+  background-image: url('/ants/ant-rogue.svg');
+  filter: drop-shadow(0 0 9px rgba(255, 97, 113, 0.72));
+}
+
+.task-chamber[data-status='claimed']::after,
+.task-chamber[data-status='submitted']::after,
+.task-chamber[data-status='settled']::after {
+  animation: chamber-ant-work 1.8s ease-in-out infinite;
+}
+
+.queen-core {
+  box-shadow:
+    0 0 48px rgba(131, 75, 255, 0.38),
+    inset 0 0 30px rgba(180, 137, 255, 0.14) !important;
+}
+
+.queen-crystal {
+  width: 54px !important;
+  height: 54px !important;
+  background: linear-gradient(145deg, #f0e5ff, #a870ff 45%, #5022c3 78%) !important;
+  filter: drop-shadow(0 0 17px rgba(194, 153, 255, 0.95));
+}
+
+.brand-mark {
+  background:
+    radial-gradient(circle, rgba(140, 87, 255, 0.38), transparent 66%),
+    url('/ants/ant-worker.svg') center / 29px 29px no-repeat !important;
+  border-color: rgba(187, 151, 255, 0.32) !important;
+  box-shadow: 0 0 20px rgba(131, 80, 241, 0.26);
+}
+
+.brand-mark > svg {
+  visibility: hidden;
+}
+
+.release-button {
+  position: relative;
+  padding-left: 56px !important;
+  background:
+    radial-gradient(circle at 18% 50%, rgba(216, 188, 255, 0.19), transparent 24%),
+    linear-gradient(135deg, #4b22ba, #8a55f5 56%, #5f36c8) !important;
+}
+
+.release-button::before {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  width: 34px;
+  height: 34px;
+  content: '';
+  transform: translateY(-50%);
+  background: url('/ants/ant-worker.svg') center / contain no-repeat;
+  filter: drop-shadow(0 0 8px rgba(226, 211, 255, 0.78));
+}
+
+.release-button > svg {
+  display: none !important;
+}
+
+.skill-chip {
+  position: relative;
+  padding-left: 32px !important;
+  background: linear-gradient(135deg, rgba(131, 110, 249, 0.11), rgba(67, 40, 111, 0.05)) !important;
+}
+
+.skill-chip::before {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  content: '';
+  transform: translateY(-50%);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.skill-chip:nth-child(1)::before { background-image: url('/ants/ant-worker.svg'); }
+.skill-chip:nth-child(2)::before { background-image: url('/ants/ant-carrier.svg'); }
+.skill-chip:nth-child(3)::before { background-image: url('/ants/ant-scout.svg'); }
+.skill-chip:nth-child(4)::before { background-image: url('/ants/ant-guard.svg'); }
+.skill-chip > svg { display: none; }
+
+.guard-shield {
+  background:
+    radial-gradient(circle, rgba(99, 230, 255, 0.14), transparent 66%),
+    url('/ants/ant-guard.svg') center / 46px 46px no-repeat !important;
+}
+
+.guard-shield > svg {
+  opacity: 0.22;
+}
+
+.moving-ant {
+  filter: drop-shadow(0 0 8px #ae8fff) drop-shadow(0 0 4px #ffffff) !important;
+}
+
+.ant-glyph {
+  fill: #fff7ff !important;
+  stroke: #c9aaff !important;
+  stroke-width: 2.1 !important;
+}
+
+.rogue-gate[data-state='passed'] {
+  border-color: rgba(255, 103, 111, 0.42) !important;
+  background: linear-gradient(145deg, rgba(67, 12, 26, 0.78), rgba(19, 5, 13, 0.74)) !important;
+}
+
+.colony-caption {
+  border-color: rgba(177, 135, 255, 0.25) !important;
+  background: rgba(7, 6, 16, 0.74) !important;
+  backdrop-filter: blur(8px);
+}
+
+@keyframes ambient-ant-breathe {
+  0%, 100% { opacity: 0.67; filter: drop-shadow(0 0 7px rgba(170, 117, 255, 0.62)); }
+  50% { opacity: 0.96; filter: drop-shadow(0 0 12px rgba(198, 164, 255, 0.94)); }
+}
+
+@keyframes chamber-ant-work {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-2deg); }
+  50% { transform: translate3d(-5px, -3px, 0) rotate(3deg); }
+}
+
+@media (max-width: 1080px) {
+  .colony-stage::before {
+    background-size: 24px 24px, 27px 27px, 22px 22px, 21px 21px, 24px 24px;
+  }
+
+  .task-chamber::after,
+  .guard-chamber::after,
+  .treasury-chamber::after,
+  .rogue-gate::after {
+    width: 38px;
+    height: 38px;
+    right: -10px;
+    bottom: -12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .colony-stage::before,
+  .task-chamber::after {
+    animation: none !important;
+  }
+}

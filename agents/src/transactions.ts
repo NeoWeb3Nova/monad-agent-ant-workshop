@@ -49,9 +49,6 @@ export class TransactionExecutionError extends Error {
 }
 
 export async function executeWrite(input: WriteRequest): Promise<TransactionRecord> {
-  const sentAtMs = Date.now();
-  const sentAt = new Date(sentAtMs).toISOString();
-
   const simulation = await publicClient.simulateContract({
     account: input.wallet.account,
     address: contractAddress,
@@ -61,6 +58,8 @@ export async function executeWrite(input: WriteRequest): Promise<TransactionReco
     ...(input.value === undefined ? {} : { value: input.value }),
   } as never);
 
+  const sentAtMs = Date.now();
+  const sentAt = new Date(sentAtMs).toISOString();
   let transactionHash: Hash;
   try {
     transactionHash = await input.wallet.writeContract(simulation.request);
@@ -84,8 +83,8 @@ export async function executeWrite(input: WriteRequest): Promise<TransactionReco
     );
   }
 
-  const transaction = await publicClient.getTransaction({ hash: transactionHash });
   const receiptAtMs = Date.now();
+  const transaction = await publicClient.getTransaction({ hash: transactionHash });
   const record: TransactionRecord = {
     label: input.label,
     account: input.wallet.account.address,

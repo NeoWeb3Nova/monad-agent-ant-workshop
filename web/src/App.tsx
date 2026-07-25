@@ -13,7 +13,6 @@ import {
   ImageSquare,
   LockKey,
   PaintBrush,
-  Play,
   Pulse,
   ShieldCheck,
   Sparkle,
@@ -21,6 +20,7 @@ import {
   Wallet,
   WarningCircle,
   X,
+  type Icon,
 } from "@phosphor-icons/react";
 import {
   useCallback,
@@ -46,17 +46,26 @@ import { monadTestnet } from "./lib/web3";
 
 const defaultGoal = "Restore one damaged family photograph and recover its story.";
 
-const routeBySkill: Record<Exclude<Skill, "verify" | "rogue">, string> = {
-  repair: "queen-repair",
-  color: "queen-color",
-  story: "queen-story",
-};
-
 const chamberCopy: Record<Exclude<Skill, "verify" | "rogue">, { title: string; subtitle: string }> = {
   repair: { title: "Repair Chamber", subtitle: "照片修复工坊" },
   color: { title: "Color Chamber", subtitle: "图像上色工坊" },
   story: { title: "Story Chamber", subtitle: "记忆叙事工坊" },
 };
+
+interface WorkflowStepDefinition {
+  number: string;
+  title: string;
+  copy: string;
+  icon: Icon;
+}
+
+const workflowSteps: WorkflowStepDefinition[] = [
+  { number: "1", title: "Goal", copy: "Queen plans mission", icon: CrownSimple },
+  { number: "2", title: "Split tasks", copy: "Three isolated taskIds", icon: Pulse },
+  { number: "3", title: "Ant agents", copy: "Parallel wallet execution", icon: BugBeetle },
+  { number: "4", title: "Verify", copy: "Guard validates outputs", icon: ShieldCheck },
+  { number: "5", title: "Settle", copy: "Rewards credited in MON", icon: Cube },
+];
 
 function App() {
   const dataSource = useMemo(() => createColonyDataSource(), []);
@@ -389,18 +398,18 @@ function TaskChamber({
   task?: TaskView;
 }) {
   const copy = chamberCopy[skill];
-  const Icon = skill === "repair" ? ImageSquare : skill === "color" ? PaintBrush : TextT;
+  const IconComponent = skill === "repair" ? ImageSquare : skill === "color" ? PaintBrush : TextT;
 
   return (
     <article className={`task-chamber chamber-position ${className}`} data-status={task?.status ?? "open"}>
       <div className="chamber-title">
-        <Icon weight="fill" />
+        <IconComponent weight="fill" />
         <span><strong>{copy.title}</strong><small>{copy.subtitle}</small></span>
         <TaskStatusPill status={task?.status ?? "open"} />
       </div>
 
       <div className={`artifact-preview artifact-${skill}`}>
-        <Icon weight="duotone" />
+        <IconComponent weight="duotone" />
         <span>{task?.outputSummary ?? task?.title ?? "Waiting for Queen"}</span>
       </div>
 
@@ -539,19 +548,13 @@ function WorkflowConsole({ snapshot }: { snapshot: ColonySnapshot }) {
   return (
     <section className="workflow-console">
       <div className="workflow-steps">
-        {[
-          ["1", "Goal", "Queen plans mission", CrownSimple],
-          ["2", "Split tasks", "Three isolated taskIds", Pulse],
-          ["3", "Ant agents", "Parallel wallet execution", BugBeetle],
-          ["4", "Verify", "Guard validates outputs", ShieldCheck],
-          ["5", "Settle", "Rewards credited in MON", Cube],
-        ].map(([number, title, copy, Icon], index) => {
-          const StepIcon = Icon as typeof CrownSimple;
+        {workflowSteps.map((step, index) => {
+          const StepIcon = step.icon;
           return (
-            <div className="workflow-step" data-active={progress >= index + 1} key={String(number)}>
+            <div className="workflow-step" data-active={progress >= index + 1} key={step.number}>
               <span className="step-icon"><StepIcon weight="fill" /></span>
-              <div><strong>{number} {title}</strong><small>{copy}</small></div>
-              {index < 4 && <span className="step-arrow">→</span>}
+              <div><strong>{step.number} {step.title}</strong><small>{step.copy}</small></div>
+              {index < workflowSteps.length - 1 && <span className="step-arrow">→</span>}
             </div>
           );
         })}

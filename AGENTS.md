@@ -52,7 +52,8 @@ git status --short --branch --untracked-files=all
 → 领取任务
 → 提交结果哈希
 → Guard 验证
-→ 自动结算
+→ 奖励记入 claimableRewards
+→ Worker 提取真实 MON
 → 前端展示交易与 Explorer 证据
 ```
 
@@ -65,7 +66,8 @@ git status --short --branch --untracked-files=all
 - 技能匹配和任务领取；
 - 输出哈希提交；
 - Guard 验证；
-- 自动结算；
+- 独立奖励记账与 Worker 提款；
+- 本地事件驱动 Agent Runner；
 - Monad Testnet 部署；
 - 前端可查看任务状态、交易哈希和 Explorer 链接；
 - 公网部署。
@@ -126,13 +128,6 @@ ColonyDataSource interface
 环境变量建议：
 
 ```bash
-NEXT_PUBLIC_DATA_MODE=mock
-NEXT_PUBLIC_DATA_MODE=live
-```
-
-如果最终采用 Vite，则使用：
-
-```bash
 VITE_DATA_MODE=mock
 VITE_DATA_MODE=live
 ```
@@ -171,7 +166,8 @@ anvil 1.7.1-monad-v1.0.0
 
 ```text
 contracts/   Foundry 合约、脚本和测试
-web/         前端和必要的后端路由
+web/         React + Vite 静态前端
+agents/      本地 Node.js 事件驱动 Agent Runner
 ```
 
 使用 OpenZeppelin 提供的成熟安全组件，不要重新实现标准权限、防重入或签名工具。
@@ -183,11 +179,12 @@ web/         前端和必要的后端路由
 ```solidity
 mapping(bytes32 taskId => Task) tasks;
 mapping(address agent => Agent) agents;
+mapping(address worker => uint256 amount) claimableRewards;
 ```
 
 避免让所有任务频繁修改同一个全局计数器、全局队列、总金额或全局评分。任务 ID 优先使用确定性哈希，而不是依赖 `nextTaskId++`。
 
-同一任务的排他领取是有意冲突；不同任务的领取、提交和结算应尽量互不写入相同状态。
+同一任务的排他领取是有意冲突；不同任务的领取、提交、验证和奖励记账应尽量互不写入相同状态。资金提款会改变共享合约余额，不作为并行性能证明。
 
 ### 5.3 链上边界
 
@@ -197,7 +194,7 @@ mapping(address agent => Agent) agents;
 - 任务标识和状态；
 - 输入、输出哈希；
 - 验证授权与结果；
-- 托管资金和结算；
+- 托管资金、奖励记账和提款；
 - 可用于前端实时响应的事件。
 
 不上链：
@@ -231,6 +228,9 @@ Monad 按 `gas_limit` 而不是实际 `gas_used` 收费：
 ## 6. Agent 与 AI 执行约束
 
 - Queen、Worker 和 Guard 的行为优先保持可解释和可重复；
+- Queen P0 使用 Vite 前端内的确定性模板；
+- Worker 和 Guard 通过比赛电脑上的 Node.js Agent Runner 监听链上事件并行动；
+- Agent 私钥只保存在未提交的 `agents/.env`，不得进入 Vercel 或浏览器；
 - AI 推理属于链下执行，链上只保存必要承诺和结算状态；
 - 外部 AI API 不是 P0 的前置条件；
 - 如果真实模型影响稳定性，先使用固定 Mock 输出跑通链上闭环；
@@ -245,6 +245,7 @@ UI/UX 以清楚展示机制为目标，不追求产品级完美。
 优先展示：
 
 - 当前是 Mock 还是 Live；
+- Agent Runner 是 Online、Offline 还是 Unknown；
 - Agent、技能和钱包；
 - 任务状态机；
 - MON 奖励；
@@ -272,13 +273,14 @@ UI/UX 以清楚展示机制为目标，不追求产品级完美。
 3. 实现并测试核心合约；
 4. 部署和验证 Testnet 合约；
 5. 创建统一 Mock / Live 数据接口；
-6. 实现最小前端闭环；
+6. 实现 React + Vite 最小前端闭环；
 7. 接入真实合约；
-8. 加入 Rogue Ant 失败路径；
-9. 加入 `Release the Swarm`；
-10. 公网部署；
-11. 记录链上证据；
-12. 最后做必要的视觉优化。
+8. 实现本地事件驱动 Agent Runner；
+9. 加入 Rogue Ant 失败路径；
+10. 加入 `Release the Swarm`；
+11. 将静态前端部署到 Vercel；
+12. 记录链上证据；
+13. 最后做必要的视觉优化。
 
 这是黑客松项目，不使用严格 TDD。先快速实现可运行的最小逻辑，再补充覆盖核心状态机、资金安全和失败路径的测试。不能为了追求测试形式而阻塞 MVP，但不能跳过合约资金和权限测试。
 
@@ -291,6 +293,7 @@ UI/UX 以清楚展示机制为目标，不追求产品级完美。
 - `forge build` 通过；
 - `forge test` 通过；
 - 核心状态机和资金路径有测试；
+- 奖励记账与 Worker 提款路径有测试；
 - Testnet 合约地址可通过 RPC 读取代码；
 - Explorer 可以查看部署和关键交易；
 - 源码已验证。

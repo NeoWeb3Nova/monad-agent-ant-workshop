@@ -1,7 +1,10 @@
 # Local secrets and environment overrides
 .env
-.env.*
-!.env.example
+.env.local
+.env.*.local
+
+# Public production build defaults are committed so Vercel builds live mode.
+!.env.production
 
 # OS and editor noise
 .DS_Store

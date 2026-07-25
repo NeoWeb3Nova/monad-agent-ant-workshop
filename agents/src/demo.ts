@@ -1,4 +1,6 @@
 import {
+  BaseError,
+  ContractFunctionRevertedError,
   encodeAbiParameters,
   formatEther,
   keccak256,
@@ -17,6 +19,7 @@ import { generateOutput } from "./outputs.js";
 import {
   executeWrite,
   renderError,
+  TransactionExecutionError,
   type TransactionRecord,
 } from "./transactions.js";
 import {
@@ -180,13 +183,17 @@ async function proveSkillGuard(
       args: [repairTask.taskId],
     });
   } catch (error) {
+    requireCustomError(error, "SkillMismatch");
     console.log(
       JSON.stringify({
         event: "skill-guard",
+        ok: false,
+        code: "SkillMismatch",
         outcome: "blocked-before-broadcast",
         taskId: repairTask.taskId,
         rogue: rogue.account.address,
-        reason: renderError(error),
+        message: "Rogue Ant lacks the required repair skill",
+        txHash: null,
       }),
     );
     return;
@@ -247,7 +254,7 @@ async function runConflictLane(
   );
   const losers = results.flatMap((result, index) =>
     result.status === "rejected"
-      ? [{ worker: contenders[index]!, reason: renderError(result.reason) }]
+      ? [{ worker: contenders[index]!, error: result.reason }]
       : [],
   );
 
@@ -256,14 +263,44 @@ async function runConflictLane(
   }
 
   const winner = winners[0]!;
+  const loser = losers[0]!;
+  if (
+    !(loser.error instanceof TransactionExecutionError) ||
+    loser.error.receipt?.status !== "reverted" ||
+    !loser.error.transactionHash
+  ) {
+    throw new Error(`Conflict loser did not produce a bound reverted receipt: ${renderError(loser.error)}`);
+  }
+  const currentTask = await publicClient.readContract({
+    address: contractAddress,
+    abi: antColonyAbi,
+    functionName: "tasks",
+    args: [taskId],
+  });
+  if (currentTask[2].toLowerCase() !== winner.worker.address.toLowerCase()) {
+    throw new Error("Conflict receipt winner does not match current on-chain task owner");
+  }
+  try {
+    await publicClient.simulateContract({
+      account: loser.worker.address,
+      address: contractAddress,
+      abi: antColonyAbi,
+      functionName: "claimTask",
+      args: [taskId],
+    });
+    throw new Error("Conflict loser unexpectedly simulated a second successful claim");
+  } catch (error) {
+    requireCustomError(error, "TaskNotOpen");
+  }
   records.push(winner.record);
   console.log(
     JSON.stringify({
       event: "conflict-lane",
       taskId,
       winner: winner.worker.address,
-      loser: losers[0]!.worker.address,
-      loserReason: losers[0]!.reason,
+      loser: loser.worker.address,
+      loserCode: "TaskNotOpen",
+      loserTransactionHash: loser.error.transactionHash,
     }),
   );
 
@@ -354,6 +391,21 @@ function assertDistinctWallets(addresses: readonly string[]): void {
   if (new Set(addresses.map((address) => address.toLowerCase())).size !== addresses.length) {
     throw new Error("Every AntForge role must use an independent wallet");
   }
+}
+
+function requireCustomError(error: unknown, expectedName: string): void {
+  if (error instanceof BaseError) {
+    const reverted = error.walk(
+      (candidate) => candidate instanceof ContractFunctionRevertedError,
+    );
+    if (
+      reverted instanceof ContractFunctionRevertedError &&
+      reverted.data?.errorName === expectedName
+    ) {
+      return;
+    }
+  }
+  throw new Error(`Expected ${expectedName}, received: ${renderError(error)}`);
 }
 
 function printSummary(records: readonly TransactionRecord[], reward: bigint, taskCount: number): void {

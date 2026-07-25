@@ -4,16 +4,19 @@
 
 ## 当前实现
 
-Phase 1 已提供单合约 Foundry 闭环：Agent 注册、技能守卫、Colony Escrow、任务领取、结果提交、Guard 验证、奖励记账、Worker 提款、拒绝退款和超时取消。
+- `contracts/`：单合约 Foundry 闭环，包含 Agent 注册、技能守卫、Colony Escrow、任务领取、结果提交、Guard 验证、奖励记账、Worker 提款、拒绝退款和超时取消；
+- `agents/`：Node.js + TypeScript 事件 Runner，包含多钱包 Swarm、Rogue Skill Guard、Conflict Lane、确定性 Mock 输出和真实交易指标。
 
 ```bash
 git submodule update --init
-cd contracts
-forge build --sizes
-forge test -vv
+cd contracts && forge build --sizes && forge test -vv
+cd ../agents && npm install && npm run typecheck && npm run build
 ```
 
-合约工程说明：[contracts/README.md](contracts/README.md)
+工程说明：
+
+- [contracts/README.md](contracts/README.md)
+- [agents/README.md](agents/README.md)
 
 ## 项目文档
 

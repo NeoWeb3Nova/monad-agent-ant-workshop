@@ -13,7 +13,7 @@
 [![Vite](https://img.shields.io/badge/Vite-8.1-646CFF?style=flat-square&logo=vite&logoColor=white)](web/package.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6%20%2F%207-3178C6?style=flat-square&logo=typescript&logoColor=white)](web/package.json)
 
-[公网 Demo](https://antforge-monad.vercel.app/) · [合约](https://testnet.monadexplorer.com/address/0x028268f8fF62edc596f931E17E2Fb21015f5b0A2) · [链上证据](docs/04-monad-testnet-evidence.md) · [5 分钟路演稿](docs/05-pitch-script.md)
+[公网 Demo](https://antforge-monad.vercel.app/) · [合约](https://testnet.monadexplorer.com/address/0x028268f8fF62edc596f931E17E2Fb21015f5b0A2) · [链上证据](docs/04-monad-testnet-evidence.md) · [3 分钟路演稿](docs/06-roadshow-cue-card.md) · [前端演示步骤](docs/07-frontend-demo-walkthrough.md)
 
 </div>
 
@@ -440,7 +440,9 @@ forge script script/DeployAntColony.s.sol:DeployAntColony \
 | [docs/02-hackathon-rules.md](docs/02-hackathon-rules.md) | Monad Blitz 赛制记录 |
 | [docs/03-monad-tooling.md](docs/03-monad-tooling.md) | Monad 开发工具链 |
 | [docs/04-monad-testnet-evidence.md](docs/04-monad-testnet-evidence.md) | 部署、交易、回读与浏览器验证证据 |
-| [docs/05-pitch-script.md](docs/05-pitch-script.md) | 5 分钟路演、问答与故障预案 |
+| [docs/05-pitch-script.md](docs/05-pitch-script.md) | 完整路演策略、问答与故障预案 |
+| [docs/06-roadshow-cue-card.md](docs/06-roadshow-cue-card.md) | 可直接照读的 3 分钟口播与现场提词卡 |
+| [docs/07-frontend-demo-walkthrough.md](docs/07-frontend-demo-walkthrough.md) | 钱包连接、交易确认、Runner 执行与 Explorer 核验步骤 |
 
 ---
 

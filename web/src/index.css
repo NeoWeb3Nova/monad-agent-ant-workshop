@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  font-family: "Geist Sans", "Avenir Next", "Helvetica Neue", sans-serif;
-  color: #18181b;
-  background: #f7f7f8;
+  font-family: Inter, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  color: #faf7ff;
+  background: #050610;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -12,10 +12,15 @@
   box-sizing: border-box;
 }
 
+html {
+  background: #050610;
+}
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100dvh;
+  overflow: hidden;
 }
 
 button,
@@ -26,6 +31,31 @@ textarea {
 
 button {
   cursor: pointer;
+}
+
+::selection {
+  color: white;
+  background: rgba(131, 110, 249, 0.55);
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(196, 167, 255, 0.2);
+}
+
+@media (max-width: 1060px) {
+  body {
+    overflow: auto;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

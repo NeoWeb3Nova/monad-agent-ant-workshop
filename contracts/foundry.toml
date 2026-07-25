@@ -1,0 +1,25 @@
+[profile.default]
+src = "src"
+test = "test"
+script = "script"
+out = "out"
+libs = ["lib"]
+solc_version = "0.8.28"
+evm_version = "prague"
+optimizer = true
+optimizer_runs = 200
+bytecode_hash = "ipfs"
+cbor_metadata = true
+
+remappings = [
+  "forge-std/=lib/forge-std/src/",
+  "@openzeppelin/=lib/openzeppelin-contracts/"
+]
+
+[rpc_endpoints]
+monad_testnet = "${MONAD_RPC_URL}"
+
+[fmt]
+line_length = 110
+tab_width = 4
+bracket_spacing = true

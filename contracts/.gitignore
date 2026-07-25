@@ -1,0 +1,11 @@
+# Foundry build outputs
+cache/
+out/
+broadcast/
+
+# Local secrets
+.env
+
+# Verification scratch files
+standard-input.json
+metadata.json

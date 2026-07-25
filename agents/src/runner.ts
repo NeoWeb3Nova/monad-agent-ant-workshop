@@ -33,6 +33,7 @@ const TASK_CANCELLED = 6;
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const MAX_RUNTIME_RETRIES = 3;
 const MAX_LOG_BLOCK_RANGE = 100n;
+const MAX_CONCURRENT_LOG_REQUESTS = 4;
 
 interface TaskState {
   worker: Address;
@@ -169,36 +170,30 @@ async function getTaskCreatedLogs(fromBlock: bigint, toBlock: bigint) {
     throw new Error(`RUNNER_FROM_BLOCK ${fromBlock} is ahead of current block ${toBlock}`);
   }
 
-  const firstChunkEnd =
-    fromBlock + MAX_LOG_BLOCK_RANGE - 1n < toBlock
-      ? fromBlock + MAX_LOG_BLOCK_RANGE - 1n
-      : toBlock;
-  const logs = await publicClient.getContractEvents({
-    address: contractAddress,
-    abi: antColonyAbi,
-    eventName: "TaskCreated",
-    fromBlock,
-    toBlock: firstChunkEnd,
-  });
-
-  for (
-    let chunkStart = firstChunkEnd + 1n;
-    chunkStart <= toBlock;
-    chunkStart += MAX_LOG_BLOCK_RANGE
-  ) {
+  const ranges: Array<{ fromBlock: bigint; toBlock: bigint }> = [];
+  for (let chunkStart = fromBlock; chunkStart <= toBlock; chunkStart += MAX_LOG_BLOCK_RANGE) {
     const chunkEnd =
       chunkStart + MAX_LOG_BLOCK_RANGE - 1n < toBlock
         ? chunkStart + MAX_LOG_BLOCK_RANGE - 1n
         : toBlock;
-    logs.push(
-      ...(await publicClient.getContractEvents({
-        address: contractAddress,
-        abi: antColonyAbi,
-        eventName: "TaskCreated",
-        fromBlock: chunkStart,
-        toBlock: chunkEnd,
-      })),
+    ranges.push({ fromBlock: chunkStart, toBlock: chunkEnd });
+  }
+
+  const logs = [];
+  for (let index = 0; index < ranges.length; index += MAX_CONCURRENT_LOG_REQUESTS) {
+    const batch = ranges.slice(index, index + MAX_CONCURRENT_LOG_REQUESTS);
+    const batchLogs = await Promise.all(
+      batch.map((range) =>
+        publicClient.getContractEvents({
+          address: contractAddress,
+          abi: antColonyAbi,
+          eventName: "TaskCreated",
+          fromBlock: range.fromBlock,
+          toBlock: range.toBlock,
+        }),
+      ),
     );
+    for (const chunkLogs of batchLogs) logs.push(...chunkLogs);
   }
   return logs;
 }

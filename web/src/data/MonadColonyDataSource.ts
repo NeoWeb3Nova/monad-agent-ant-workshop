@@ -69,6 +69,7 @@ const publicClient = createPublicClient({
 });
 
 const MAX_LOG_BLOCK_RANGE = 100n;
+const MAX_CONCURRENT_LOG_REQUESTS = 4;
 
 interface LocalMetric {
   sentAt: string;
@@ -277,6 +278,7 @@ export class MonadColonyDataSource implements ColonyDataSource {
         throw new Error(`VITE_DEPLOYMENT_BLOCK ${fromBlock} is ahead of block ${latestBlock}.`);
       }
       this.nextLogBlock ??= fromBlock;
+      const missingRanges: Array<{ fromBlock: bigint; toBlock: bigint }> = [];
       for (
         let chunkStart = this.nextLogBlock;
         chunkStart <= latestBlock;
@@ -286,14 +288,26 @@ export class MonadColonyDataSource implements ColonyDataSource {
           chunkStart + MAX_LOG_BLOCK_RANGE - 1n < latestBlock
             ? chunkStart + MAX_LOG_BLOCK_RANGE - 1n
             : latestBlock;
-        const logs = await publicClient.getLogs({
-          address: contractAddress,
-          fromBlock: chunkStart,
-          toBlock: chunkEnd,
-        });
-        this.historicalLogsDirty ||= logs.length > 0;
-        this.historicalLogs.push(...logs);
-        this.nextLogBlock = chunkEnd + 1n;
+        missingRanges.push({ fromBlock: chunkStart, toBlock: chunkEnd });
+      }
+      for (let index = 0; index < missingRanges.length; index += MAX_CONCURRENT_LOG_REQUESTS) {
+        const batch = missingRanges.slice(index, index + MAX_CONCURRENT_LOG_REQUESTS);
+        const batchLogs = await Promise.all(
+          batch.map((range) =>
+            publicClient.getLogs({
+              address: contractAddress,
+              fromBlock: range.fromBlock,
+              toBlock: range.toBlock,
+            }),
+          ),
+        );
+        for (let batchIndex = 0; batchIndex < batch.length; batchIndex += 1) {
+          const range = batch[batchIndex]!;
+          const logs = batchLogs[batchIndex]!;
+          this.historicalLogsDirty ||= logs.length > 0;
+          this.historicalLogs.push(...logs);
+          this.nextLogBlock = range.toBlock + 1n;
+        }
       }
       if (!this.historicalLogsDirty && this.historicalLogs.length > 0) return;
       const decodedLogs = parseEventLogs({

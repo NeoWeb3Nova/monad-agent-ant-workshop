@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.vercel
+
+# Public production build defaults are committed so Vercel builds live mode.
+!.env.production

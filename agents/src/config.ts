@@ -1,4 +1,7 @@
-import "dotenv/config";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { config as loadEnv } from "dotenv";
 
 import {
   createPublicClient,
@@ -10,6 +13,12 @@ import {
   type Hex,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
+
+const moduleDirectory = dirname(fileURLToPath(import.meta.url));
+const explicitEnvironment = { ...process.env };
+loadEnv({ path: resolve(moduleDirectory, "../../.env"), quiet: true });
+loadEnv({ path: resolve(moduleDirectory, "../.env"), override: true, quiet: true });
+Object.assign(process.env, explicitEnvironment);
 
 function readRequired(name: string): string {
   const value = process.env[name]?.trim();

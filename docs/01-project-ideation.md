@@ -80,17 +80,57 @@ AntForge
 
 创新对象不是某一只 Agent，而是一支按目标临时形成、按技能分工、按贡献结算的机器劳动力团队。
 
-### 2.3 明确不做
+### 2.3 完整蚁群愿景
 
-- 多行业 Agent 商城；
+AntForge 将蚂蚁社会映射成多 Agent 系统：
+
+- 每个 Agent 是一只拥有独立技能、钱包和履历的「蚂蚁」；
+- 用户只提交一个目标，不需要逐个寻找和管理 Agent；
+- Queen Agent 将目标拆成可以并行执行的微任务；
+- 不同技能的 Worker Agent 分别领取和执行任务；
+- Guard Agent 负责验证结果、拒绝错误提交或处理失败；
+- Monad 智能合约负责托管预算、约束状态流转、记录贡献并结算报酬；
+- 链上事件是公开的「信息素信号」，Agent 和前端可以监听并响应；
+- Colony 围绕目标临时形成，完成后解散，但 Agent 的钱包、技能和可验证履历继续存在。
+
+这套设计是产品的长期创意内核，不能因为单日比赛无法全部完成就从设计中删除。黑客松应通过 `Live + Mock + Future` 三层表达完整愿景：
+
+| 概念 | 比赛中的实现 | 真实性 | 赛后演进 |
+| --- | --- | --- | --- |
+| 独立 Agent 技能 | 技能位图和 Agent Registry | Live，真实上链 | 动态技能、服务描述和发现协议 |
+| 独立 Agent 钱包 | Repair、Color、Story、Guard、Rogue Testnet 钱包 | Live，真实签名和交易 | Agent 自主管理预算和购买子服务 |
+| Agent 履历 | 通过事件重建领取、提交和结算记录 | Live，可验证但不做复杂评分 | 跨 Colony 声誉和可移植履历 |
+| 用户只提交目标 | 单一 Mission Composer | Live UI | 更通用的自然语言任务入口 |
+| Queen 任务拆解 | 确定性任务模板 | Mock，明确标注 | LLM 规划、动态 DAG 和预算优化 |
+| Worker 执行 | 固定输出或内置结果 | Mock，明确标注 | 接入真实图像、语言和行业 Agent |
+| Guard 验证 | 权限、结果哈希、格式和任务关联 | Live 规则 + Mock 语义判断 | 多 Guard、模型验证和争议处理 |
+| Escrow 与结算 | Native MON 托管和自动付款 | Live，真实上链 | 协议费、流支付和 x402 / MPP |
+| 信息素 | 合约事件驱动前端；Agent Route 读取任务状态后行动 | Live，真实事件和状态 | 常驻 Agent 监听器和开放事件协议 |
+| Storage / Logistics / Scout | 不进入关键路径 | Future | 存储、重试、发现、竞价和路由 |
+
+其中最重要的边界是：
+
+> Mock 用来模拟暂时做不完的链下智能能力；不能用来伪造合约、资金、交易、区块、事件或 Monad 性能。
+
+因此，即使比赛中 Queen 采用固定模板、Worker 使用预生成结果，观众仍然可以看到完整蚁群故事；同时，Agent 身份、钱包、技能检查、任务状态、信息素事件、Escrow 和结算保持真实。
+
+### 2.4 MVP 暂不实现，不等于放弃
+
+以下能力不进入本次比赛的 P0，但作为赛后路线保留：
+
+- 多行业 Agent 服务网络；
+- Agent 自主发现和竞价；
+- 质押、Slashing 和复杂声誉；
+- 多验证者仲裁；
+- 完整 RAG、长期记忆和去中心化存储；
+- x402 / MPP 深度集成；
+- Factory、CREATE2 和每任务独立 Escrow；
+- 更丰富的 Storage、Logistics 和 Scout Agent。
+
+以下内容属于工程复杂度或视觉噪声，不作为创意路线保留：
+
 - 自研 Token、NFT、DAO；
 - 多链；
-- 竞价市场、质押、Slashing；
-- 多验证者仲裁；
-- 完整 RAG 和长期记忆；
-- 去中心化文件存储；
-- x402 / MPP 深度集成；
-- Factory、CREATE2、每任务独立 Escrow；
 - 独立 FastAPI 和数据库；
 - 复杂 3D、WebGL 和冗长营销页面。
 

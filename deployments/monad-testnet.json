@@ -1,0 +1,93 @@
+{
+  "network": {
+    "name": "Monad Testnet",
+    "chainId": 10143,
+    "rpcUrl": "https://testnet-rpc.monad.xyz",
+    "explorerUrl": "https://testnet.monadexplorer.com"
+  },
+  "generatedAt": "2026-07-25T08:24:11Z",
+  "contract": {
+    "name": "AntColony",
+    "address": "0x028268f8fF62edc596f931E17E2Fb21015f5b0A2",
+    "deploymentBlock": 47924433,
+    "deploymentTransactionHash": "0xf0567983d07c3a5811d603612defb71b188856b44db840b895e164e4f941a00c",
+    "deployer": "0x650cd30a58e6893169F41CaC9379D02e7E34653F",
+    "runtimeCodeBytes": 5388,
+    "runtimeCodeHash": "0xda7d09914c8130c292a1d74ee95078b24d61355fa55ffd511a06eace8c800f57",
+    "sourceVerification": {
+      "provider": "MonadVision Sourcify",
+      "status": "exact_match",
+      "verificationJobId": "d9838f06-ca52-4fa5-9f82-db4d4d83a7c9",
+      "verificationUrl": "https://sourcify-api-monad.blockvision.org/v2/verify/d9838f06-ca52-4fa5-9f82-db4d4d83a7c9",
+      "verifiedAt": "2026-07-25T08:18:18Z"
+    }
+  },
+  "roles": {
+    "requester": "0x650cd30a58e6893169F41CaC9379D02e7E34653F",
+    "repair": "0x940Ab044E3b815d929636496010A3b7fFA51616E",
+    "color": "0xBd8747f4f723b52B8B9872F5Fc021138f26e6bE7",
+    "story": "0xe4E1E1cb6b73070d9de48B64bc0069EAc01673f7",
+    "guard": "0xD6BFA77F707662A74CdA7C21dBb04e1a6cfddBc5",
+    "rogue": "0x773553207D850CdB45f255B610C6E4155Bd7C96d"
+  },
+  "proof": {
+    "agentRegistrationTransactions": {
+      "repair": "0xe0dd7cf3bfae41f4c3294c3797de12fe8b3e4557f6388db66b95ca7f2b77acb7",
+      "color": "0x9d4a1a49a948b990636230d8effe16a387e29f3eb411733aebee892cb1f65537",
+      "story": "0x5ee84e1f6d4afabda015752a1dc36ccc04a15027ea99837281b7740d701b3cd3",
+      "guard": "0xe6317513c033e6114038718c6c2e30db48bd8ff112343187e6630e508a60e7ac",
+      "rogue": "0x105d3252f77949004d422f198eb0068db8aae1fc572feba5a01d437af90cb124"
+    },
+    "swarm": {
+      "taskCount": 3,
+      "rewardPerTaskWei": "1000000000000000",
+      "createColonyTransactionHash": "0xd7b5690c0781520d8750d50aac3b6733735a98a7f091bac1232669f940574763",
+      "repairTaskId": "0x94073fd15251fb8fafffb1cae65b1259a46ce5492831a6a4bd36ec7aa1319e0e",
+      "repairClaimTransactionHash": "0xf0c11cffbb2ea79b713d7b1fb6bd757361fa1622a4ba2ebe363a0b2c29c57f9a",
+      "repairSubmitTransactionHash": "0x2687798b5e875ccf3abc26cb1469d4fb1d798e7e39a3ccbb14158697730f433c",
+      "repairVerifyTransactionHash": "0xc6c8d6401ed2e6374660b5e6d1235cd441536cbe17dbacdaa8c5b671dc42987e",
+      "repairWithdrawTransactionHash": "0xba439f5fa3eb5b76283ae5c88eaa91779ac89bb4c6338fd482008f25fb0da2c7",
+      "repairFinalStatus": "Settled",
+      "workerClaimableRewardsAfterWithdrawalWei": "0"
+    },
+    "skillGuard": {
+      "taskId": "0x94073fd15251fb8fafffb1cae65b1259a46ce5492831a6a4bd36ec7aa1319e0e",
+      "rogue": "0x773553207D850CdB45f255B610C6E4155Bd7C96d",
+      "result": "SkillMismatch during pre-broadcast simulation",
+      "transactionHash": null
+    },
+    "conflictLane": {
+      "taskId": "0xc451de51058216c6d253718e96e982dec4484eb36bf4f7c36edd4fbb4316e5ad",
+      "createColonyTransactionHash": "0xe3c6673447874a22ed9a51dc699d4f23aec000e8980bf738e889860d6325cc1b",
+      "winner": "0xe4E1E1cb6b73070d9de48B64bc0069EAc01673f7",
+      "winnerTransactionHash": "0x1d632ec74a9e8e61748bf7912d2744ab72e128f53e9219ccc77fbe5f8c3743d1",
+      "loser": "0x940Ab044E3b815d929636496010A3b7fFA51616E",
+      "loserTransactionHash": "0x5c8f5070a5db880178220027a4eeb6d3f6e725be2888cae745996643cb9b4061",
+      "loserReceiptStatus": "reverted",
+      "loserError": "TaskNotOpen",
+      "finalStatus": "Settled"
+    },
+    "summary": {
+      "successfulBusinessTransactions": 24,
+      "contractBalanceAfterSettlementWei": "0",
+      "blockchainSettlement": "live",
+      "agentExecution": "deterministic-mock",
+      "phase5ShowcaseEvidenceIsPreliminary": true
+    },
+    "browserVerification": {
+      "dataMode": "live",
+      "observedColonyId": "0x4878e8d79b734579991cbaa71628b246018fae834ecd4ea9b2cbef1bac77565d",
+      "observedSettledTasks": "1/1",
+      "latestEvidenceBlock": 47925206,
+      "blockingConsoleErrors": 0,
+      "result": "passed"
+    },
+    "runnerVerification": {
+      "historicalReplayFromBlock": 47924433,
+      "historicalTasksReplayed": 4,
+      "agentRegistrationMode": "already-current",
+      "incrementalWatcher": "passed",
+      "shutdown": "SIGTERM"
+    }
+  }
+}

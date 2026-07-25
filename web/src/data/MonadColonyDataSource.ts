@@ -9,12 +9,14 @@ import {
   formatEther,
   http,
   keccak256,
+  parseEventLogs,
   parseEther,
   stringToHex,
   zeroAddress,
   type Address,
   type Hash,
   type Hex,
+  type Log,
 } from "viem";
 
 import { antColonyAbi } from "../abi/antColonyAbi";
@@ -65,6 +67,8 @@ const publicClient = createPublicClient({
   transport: http(monadRpcUrl, { retryCount: 3, timeout: 20_000 }),
   pollingInterval: 800,
 });
+
+const MAX_LOG_BLOCK_RANGE = 100n;
 
 interface LocalMetric {
   sentAt: string;
@@ -128,6 +132,10 @@ export class MonadColonyDataSource implements ColonyDataSource {
   private snapshot = emptyLiveSnapshot(readContractAddress());
   private readonly listeners = new Set<() => void>();
   private readonly localMetrics = new Map<Hash, LocalMetric>();
+  private readonly historicalLogs: Log[] = [];
+  private contractReady = false;
+  private historicalLogsDirty = false;
+  private nextLogBlock?: bigint;
   private intervalId?: number;
   private refreshInFlight?: Promise<void>;
 
@@ -138,7 +146,7 @@ export class MonadColonyDataSource implements ColonyDataSource {
   subscribe(listener: () => void): () => void {
     this.listeners.add(listener);
     if (!this.intervalId) {
-      this.intervalId = window.setInterval(() => void this.refresh(), 1_200);
+      this.intervalId = window.setInterval(() => void this.refresh(), 5_000);
     }
     return () => {
       this.listeners.delete(listener);
@@ -252,19 +260,55 @@ export class MonadColonyDataSource implements ColonyDataSource {
     }
 
     try {
-      const code = await publicClient.getBytecode({ address: contractAddress });
-      if (!code || code === "0x") {
-        throw new Error(`No contract bytecode at ${contractAddress} on Monad Testnet.`);
+      if (!this.contractReady) {
+        const code = await publicClient.getBytecode({ address: contractAddress });
+        if (!code || code === "0x") {
+          throw new Error(`No contract bytecode at ${contractAddress} on Monad Testnet.`);
+        }
+        this.contractReady = true;
       }
-      const fromBlock = BigInt(import.meta.env.VITE_DEPLOYMENT_BLOCK || "0");
-      const colonies = await publicClient.getContractEvents({
-        address: contractAddress,
+      const deploymentBlock = import.meta.env.VITE_DEPLOYMENT_BLOCK?.trim();
+      if (!deploymentBlock || !/^\d+$/.test(deploymentBlock) || BigInt(deploymentBlock) <= 0n) {
+        throw new Error("VITE_DEPLOYMENT_BLOCK must be the non-zero AntColony deployment block.");
+      }
+      const fromBlock = BigInt(deploymentBlock);
+      const latestBlock = await publicClient.getBlockNumber();
+      if (fromBlock > latestBlock) {
+        throw new Error(`VITE_DEPLOYMENT_BLOCK ${fromBlock} is ahead of block ${latestBlock}.`);
+      }
+      this.nextLogBlock ??= fromBlock;
+      for (
+        let chunkStart = this.nextLogBlock;
+        chunkStart <= latestBlock;
+        chunkStart += MAX_LOG_BLOCK_RANGE
+      ) {
+        const chunkEnd =
+          chunkStart + MAX_LOG_BLOCK_RANGE - 1n < latestBlock
+            ? chunkStart + MAX_LOG_BLOCK_RANGE - 1n
+            : latestBlock;
+        const logs = await publicClient.getLogs({
+          address: contractAddress,
+          fromBlock: chunkStart,
+          toBlock: chunkEnd,
+        });
+        this.historicalLogsDirty ||= logs.length > 0;
+        this.historicalLogs.push(...logs);
+        this.nextLogBlock = chunkEnd + 1n;
+      }
+      if (!this.historicalLogsDirty && this.historicalLogs.length > 0) return;
+      const decodedLogs = parseEventLogs({
         abi: antColonyAbi,
-        eventName: "ColonyCreated",
-        fromBlock,
+        logs: this.historicalLogs,
+        strict: true,
       });
+      const colonies = decodedLogs.filter((log) => log.eventName === "ColonyCreated");
       const latestColony = colonies.at(-1);
-      if (!latestColony?.args.colonyId || !latestColony.args.requester) {
+      if (
+        !latestColony?.args.colonyId ||
+        !latestColony.args.requester ||
+        latestColony.blockNumber === null ||
+        !latestColony.transactionHash
+      ) {
         this.snapshot = {
           ...emptyLiveSnapshot(contractAddress),
           events: [
@@ -277,56 +321,22 @@ export class MonadColonyDataSource implements ColonyDataSource {
             },
           ],
         };
+        this.historicalLogsDirty = false;
         this.emit();
         return;
       }
 
       const eventFromBlock = latestColony.blockNumber;
-      const [created, claimed, submitted, verified, credited, rejected, cancelled] =
-        await Promise.all([
-          publicClient.getContractEvents({
-            address: contractAddress,
-            abi: antColonyAbi,
-            eventName: "TaskCreated",
-            fromBlock: eventFromBlock,
-          }),
-          publicClient.getContractEvents({
-            address: contractAddress,
-            abi: antColonyAbi,
-            eventName: "TaskClaimed",
-            fromBlock: eventFromBlock,
-          }),
-          publicClient.getContractEvents({
-            address: contractAddress,
-            abi: antColonyAbi,
-            eventName: "ResultSubmitted",
-            fromBlock: eventFromBlock,
-          }),
-          publicClient.getContractEvents({
-            address: contractAddress,
-            abi: antColonyAbi,
-            eventName: "ResultVerified",
-            fromBlock: eventFromBlock,
-          }),
-          publicClient.getContractEvents({
-            address: contractAddress,
-            abi: antColonyAbi,
-            eventName: "RewardCredited",
-            fromBlock: eventFromBlock,
-          }),
-          publicClient.getContractEvents({
-            address: contractAddress,
-            abi: antColonyAbi,
-            eventName: "TaskRejected",
-            fromBlock: eventFromBlock,
-          }),
-          publicClient.getContractEvents({
-            address: contractAddress,
-            abi: antColonyAbi,
-            eventName: "TaskCancelled",
-            fromBlock: eventFromBlock,
-          }),
-        ]);
+      const currentColonyLogs = decodedLogs.filter(
+        (log) => log.blockNumber !== null && log.blockNumber >= eventFromBlock,
+      );
+      const created = currentColonyLogs.filter((log) => log.eventName === "TaskCreated");
+      const claimed = currentColonyLogs.filter((log) => log.eventName === "TaskClaimed");
+      const submitted = currentColonyLogs.filter((log) => log.eventName === "ResultSubmitted");
+      const verified = currentColonyLogs.filter((log) => log.eventName === "ResultVerified");
+      const credited = currentColonyLogs.filter((log) => log.eventName === "RewardCredited");
+      const rejected = currentColonyLogs.filter((log) => log.eventName === "TaskRejected");
+      const cancelled = currentColonyLogs.filter((log) => log.eventName === "TaskCancelled");
 
       const validCreated = created.filter(hasTaskId);
       const taskReads = await Promise.all(
@@ -422,6 +432,7 @@ export class MonadColonyDataSource implements ColonyDataSource {
         },
         isRunning: hasClaims && !allSettled,
       };
+      this.historicalLogsDirty = false;
       this.emit();
     } catch (error) {
       this.setError(displayError(error));

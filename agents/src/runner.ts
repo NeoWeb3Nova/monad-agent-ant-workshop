@@ -9,6 +9,7 @@ import {
   contractAddress,
   pollingIntervalMs,
   publicClient,
+  type AgentWallet,
 } from "./config.js";
 import { generateOutput, validateOutput } from "./outputs.js";
 import {
@@ -31,6 +32,7 @@ const TASK_REJECTED = 5;
 const TASK_CANCELLED = 6;
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const MAX_RUNTIME_RETRIES = 3;
+const MAX_LOG_BLOCK_RANGE = 100n;
 
 interface TaskState {
   worker: Address;
@@ -54,35 +56,29 @@ async function main(): Promise<void> {
   await printWalletReadiness(swarm);
   await Promise.all([
     ...swarm.workers.map((worker) =>
-      executeWrite({
+      ensureAgentRegistered({
         label: `runner:register:${worker.role}`,
         wallet: worker.wallet,
-        functionName: "registerAgent",
-        args: [worker.skill, profileHash(worker.label)],
+        skills: worker.skill,
+        metadataHash: profileHash(worker.label),
       }),
     ),
-    executeWrite({
+    ensureAgentRegistered({
       label: "runner:register:guard",
       wallet: swarm.guard,
-      functionName: "registerAgent",
-      args: [SKILLS.verify, profileHash("Guard Ant")],
+      skills: SKILLS.verify,
+      metadataHash: profileHash("Guard Ant"),
     }),
-    executeWrite({
+    ensureAgentRegistered({
       label: "runner:register:rogue",
       wallet: swarm.rogue,
-      functionName: "registerAgent",
-      args: [SKILLS.rogue, profileHash("Rogue Ant")],
+      skills: SKILLS.rogue,
+      metadataHash: profileHash("Rogue Ant"),
     }),
   ]);
 
   const backfillToBlock = await publicClient.getBlockNumber();
-  const historicalLogs = await publicClient.getContractEvents({
-    address: contractAddress,
-    abi: antColonyAbi,
-    eventName: "TaskCreated",
-    fromBlock,
-    toBlock: backfillToBlock,
-  });
+  const historicalLogs = await getTaskCreatedLogs(fromBlock, backfillToBlock);
   for (const log of historicalLogs) {
     dispatchTaskLog(log.args.taskId, log.args.skill, swarm);
   }
@@ -105,29 +101,106 @@ async function main(): Promise<void> {
     }),
   );
 
-  const unwatch = publicClient.watchContractEvent({
-    address: contractAddress,
-    abi: antColonyAbi,
-    eventName: "TaskCreated",
-    pollingInterval: pollingIntervalMs,
-    fromBlock: backfillToBlock + 1n,
-    onLogs: (logs) => {
-      for (const log of logs) {
-        dispatchTaskLog(log.args.taskId, log.args.skill, swarm);
+  let nextWatchBlock = backfillToBlock + 1n;
+  let stopped = false;
+  let pollTimer: NodeJS.Timeout | undefined;
+  const pollTaskCreated = async () => {
+    if (stopped) return;
+    try {
+      const latestBlock = await publicClient.getBlockNumber();
+      if (nextWatchBlock <= latestBlock) {
+        const logs = await getTaskCreatedLogs(nextWatchBlock, latestBlock);
+        for (const log of logs) {
+          dispatchTaskLog(log.args.taskId, log.args.skill, swarm);
+        }
+        nextWatchBlock = latestBlock + 1n;
       }
-    },
-    onError: (error) => {
+    } catch (error) {
       console.error(`TaskCreated watcher error: ${renderError(error)}`);
-    },
-  });
+    } finally {
+      if (!stopped) pollTimer = setTimeout(pollTaskCreated, pollingIntervalMs);
+    }
+  };
+  pollTimer = setTimeout(pollTaskCreated, 0);
 
   const shutdown = (signal: string) => {
     console.log(`Stopping AntForge runner after ${signal}`);
-    unwatch();
+    stopped = true;
+    if (pollTimer) clearTimeout(pollTimer);
     process.exitCode = 0;
   };
   process.once("SIGINT", () => shutdown("SIGINT"));
   process.once("SIGTERM", () => shutdown("SIGTERM"));
+}
+
+async function ensureAgentRegistered(input: {
+  label: string;
+  wallet: AgentWallet;
+  skills: bigint;
+  metadataHash: Hex;
+}): Promise<void> {
+  const current = await publicClient.readContract({
+    address: contractAddress,
+    abi: antColonyAbi,
+    functionName: "agents",
+    args: [input.wallet.account.address],
+  });
+  if (current[2] && current[0] === input.skills && current[1] === input.metadataHash) {
+    console.log(
+      JSON.stringify({
+        event: "agent-ready",
+        label: input.label,
+        address: input.wallet.account.address,
+        registration: "already-current",
+      }),
+    );
+    return;
+  }
+  await executeWrite({
+    label: input.label,
+    wallet: input.wallet,
+    functionName: "registerAgent",
+    args: [input.skills, input.metadataHash],
+  });
+}
+
+async function getTaskCreatedLogs(fromBlock: bigint, toBlock: bigint) {
+  if (fromBlock > toBlock) {
+    throw new Error(`RUNNER_FROM_BLOCK ${fromBlock} is ahead of current block ${toBlock}`);
+  }
+
+  const firstChunkEnd =
+    fromBlock + MAX_LOG_BLOCK_RANGE - 1n < toBlock
+      ? fromBlock + MAX_LOG_BLOCK_RANGE - 1n
+      : toBlock;
+  const logs = await publicClient.getContractEvents({
+    address: contractAddress,
+    abi: antColonyAbi,
+    eventName: "TaskCreated",
+    fromBlock,
+    toBlock: firstChunkEnd,
+  });
+
+  for (
+    let chunkStart = firstChunkEnd + 1n;
+    chunkStart <= toBlock;
+    chunkStart += MAX_LOG_BLOCK_RANGE
+  ) {
+    const chunkEnd =
+      chunkStart + MAX_LOG_BLOCK_RANGE - 1n < toBlock
+        ? chunkStart + MAX_LOG_BLOCK_RANGE - 1n
+        : toBlock;
+    logs.push(
+      ...(await publicClient.getContractEvents({
+        address: contractAddress,
+        abi: antColonyAbi,
+        eventName: "TaskCreated",
+        fromBlock: chunkStart,
+        toBlock: chunkEnd,
+      })),
+    );
+  }
+  return logs;
 }
 
 function dispatchTaskLog(

@@ -1,5 +1,6 @@
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
+import { performance } from "node:perf_hooks";
 
 import {
   encodeFunctionData,
@@ -121,6 +122,7 @@ async function executeWriteUnlocked(input: WriteRequest): Promise<TransactionRec
   pending.sentAt = new Date(sentAtMs).toISOString();
   await savePending(pending);
 
+  const sentAtMonotonicMs = performance.now();
   let sendError: unknown;
   try {
     const returnedHash = await input.wallet.sendRawTransaction({ serializedTransaction });
@@ -149,6 +151,7 @@ async function executeWriteUnlocked(input: WriteRequest): Promise<TransactionRec
   }
 
   const receiptAtMs = Date.now();
+  const receiptAtMonotonicMs = performance.now();
   await removePending(input.wallet.account.address);
   const record: TransactionRecord = {
     label: input.label,
@@ -159,7 +162,7 @@ async function executeWriteUnlocked(input: WriteRequest): Promise<TransactionRec
     nonce: prepared.nonce,
     sentAt: pending.sentAt,
     receiptAt: new Date(receiptAtMs).toISOString(),
-    inclusionLatencyMs: receiptAtMs - sentAtMs,
+    inclusionLatencyMs: Math.round(receiptAtMonotonicMs - sentAtMonotonicMs),
     status: receipt.status,
   };
 

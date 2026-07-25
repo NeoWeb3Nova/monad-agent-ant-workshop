@@ -37,8 +37,8 @@ const explorerUrl = process.env.MONAD_EXPLORER_URL?.trim() || "https://testnet.m
 export const pollingIntervalMs = readPositiveInteger("POLLING_INTERVAL_MS", 800);
 export const executionMode = process.env.AGENT_EXECUTION_MODE?.trim() || "mock";
 
-if (executionMode !== "mock" && executionMode !== "api") {
-  throw new Error("AGENT_EXECUTION_MODE must be mock or api");
+if (executionMode !== "mock") {
+  throw new Error("Only AGENT_EXECUTION_MODE=mock is implemented in the MVP");
 }
 
 export const antForgeChain = defineChain({
@@ -70,7 +70,8 @@ export function walletFromEnv(name: string) {
   return createWalletClient({
     account,
     chain: antForgeChain,
-    transport: http(rpcUrl, { retryCount: 3, timeout: 20_000 }),
+    // Never retry eth_sendRawTransaction implicitly. Receipt/status reads may retry via publicClient.
+    transport: http(rpcUrl, { retryCount: 0, timeout: 20_000 }),
   });
 }
 

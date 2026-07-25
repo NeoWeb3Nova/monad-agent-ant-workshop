@@ -133,7 +133,7 @@ async function processTask(
       throw new Error(`Claim receipt did not produce the expected worker/state for ${taskId}`);
     }
 
-    const output = generateOutput(taskId, worker);
+    const output = generateOutput(worker);
     await executeWrite({
       label: `runner:submit:${worker.role}`,
       wallet: worker.wallet,

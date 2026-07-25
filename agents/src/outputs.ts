@@ -9,26 +9,30 @@ export interface AgentOutput {
   summary: string;
 }
 
-export function generateOutput(taskId: Hex, worker: WorkerProfile): AgentOutput {
+export function generateOutput(worker: WorkerProfile): AgentOutput {
   if (executionMode !== "mock") {
-    throw new Error("API execution adapter is not implemented in the MVP; use AGENT_EXECUTION_MODE=mock");
+    throw new Error("Only the deterministic mock adapter is implemented in the MVP");
   }
 
   const summary = deterministicSummary(worker.role);
+  const outputUri = `mock://antforge/v1/${worker.role}`;
   const payload = JSON.stringify({
     version: 1,
     mode: "deterministic-mock",
-    taskId,
     role: worker.role,
-    worker: worker.address,
+    outputUri,
     summary,
   });
 
   return {
     outputHash: keccak256(stringToHex(payload)),
-    outputUri: `mock://antforge/${taskId.slice(2)}/${worker.role}`,
+    outputUri,
     summary,
   };
+}
+
+export function validateOutput(outputHash: Hex, worker: WorkerProfile): boolean {
+  return generateOutput(worker).outputHash.toLowerCase() === outputHash.toLowerCase();
 }
 
 function deterministicSummary(role: WorkerProfile["role"]): string {

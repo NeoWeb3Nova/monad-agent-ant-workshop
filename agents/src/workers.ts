@@ -34,16 +34,29 @@ export function loadSwarmWallets(): SwarmWallets {
     createWorker("story", "Story Ant", SKILLS.storyWrite, "STORY_AGENT_PRIVATE_KEY"),
   ];
 
-  return {
+  const swarm = {
     requester: walletFromEnv("REQUESTER_PRIVATE_KEY"),
     workers,
     guard: walletFromEnv("GUARD_AGENT_PRIVATE_KEY"),
     rogue: walletFromEnv("ROGUE_AGENT_PRIVATE_KEY"),
   };
+  assertDistinctWallets([
+    swarm.requester.account.address,
+    ...swarm.workers.map((worker) => worker.address),
+    swarm.guard.account.address,
+    swarm.rogue.account.address,
+  ]);
+  return swarm;
 }
 
 export function workerForSkill(workers: readonly WorkerProfile[], requiredSkill: bigint): WorkerProfile | undefined {
   return workers.find((worker) => (worker.skill & requiredSkill) !== 0n);
+}
+
+export function assertDistinctWallets(addresses: readonly string[]): void {
+  if (new Set(addresses.map((address) => address.toLowerCase())).size !== addresses.length) {
+    throw new Error("Every AntForge role must use an independent wallet");
+  }
 }
 
 function createWorker(

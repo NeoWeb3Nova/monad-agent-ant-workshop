@@ -117,7 +117,7 @@ async function main(): Promise<void> {
 
   const submitResults = await Promise.allSettled(
     tasks.map((task) => {
-      const output = generateOutput(task.taskId, task.worker);
+      const output = generateOutput(task.worker);
       return executeWrite({
         label: `submit:${task.worker.role}`,
         wallet: task.worker.wallet,
@@ -267,7 +267,7 @@ async function runConflictLane(
     }),
   );
 
-  const output = generateOutput(taskId, winner.worker);
+  const output = generateOutput(winner.worker);
   records.push(
     await executeWrite({
       label: "conflict:submit-winner",

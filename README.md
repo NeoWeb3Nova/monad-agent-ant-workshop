@@ -5,18 +5,21 @@
 ## 当前实现
 
 - `contracts/`：单合约 Foundry 闭环，包含 Agent 注册、技能守卫、Colony Escrow、任务领取、结果提交、Guard 验证、奖励记账、Worker 提款、拒绝退款和超时取消；
-- `agents/`：Node.js + TypeScript 事件 Runner，包含多钱包 Swarm、Rogue Skill Guard、Conflict Lane、确定性 Mock 输出和真实交易指标。
+- `agents/`：Node.js + TypeScript 事件 Runner，包含多钱包 Swarm、Rogue Skill Guard、Conflict Lane、可恢复交易 journal、确定性 Mock 输出和真实交易指标；
+- `web/`：React + Vite 单页 MVP，包含 injected 钱包、Mock/Live Adapter、Colony Map、任务状态、Proof Lanes、事件流和 Explorer 证据。
 
 ```bash
 git submodule update --init
 cd contracts && forge build --sizes && forge test -vv
 cd ../agents && npm install && npm run typecheck && npm run build
+cd ../web && npm install && npm run build
 ```
 
 工程说明：
 
 - [contracts/README.md](contracts/README.md)
 - [agents/README.md](agents/README.md)
+- [web/README.md](web/README.md)
 
 ## 项目文档
 

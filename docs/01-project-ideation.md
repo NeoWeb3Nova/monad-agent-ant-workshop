@@ -1,273 +1,335 @@
-# Monad沙丘上的Agent蚂蚁工坊：选题与设计讨论基线
+# Monad沙丘上的Agent蚂蚁工坊：MVP 设计基线
 
 > 英文品牌：**AntForge on Monad**<br>
-> 文档状态：赛场选题讨论稿，尚未成为最终实施规格<br>
-> 创建时间：2026-07-25<br>
-> 用途：沉淀项目灵感、技术判断、范围取舍和待确认事项，为后续正式设计与开发提供共同上下文。
+> 版本：MVP Design v2<br>
+> 状态：建议实施基线，等待最终确认<br>
+> 更新时间：2026-07-25<br>
+> 约束来源：`AGENTS.md`、`docs/02-hackathon-rules.md`、`docs/03-monad-tooling.md`
 
-## 1. 项目起点
+## 1. 一页决策
 
-项目灵感来自真实蚂蚁社会的分工与群体协作：蚂蚁个体能力有限，但通过角色分工、信息素和大量并行活动，可以完成远超单一个体能力的复杂目标。
+AntForge 不做 Agent 商城，也不做覆盖多个行业的通用平台。
 
-我们希望把这种结构映射到多 Agent 系统：
+本次黑客松只证明一个机制：
 
-- 每个 Agent 是一只拥有独立技能、钱包和履历的「蚂蚁」；
-- 用户只提交一个目标，不需要逐个寻找和管理 Agent；
-- 蚁后 Agent 将目标拆成可以并行执行的微任务；
-- 不同技能的工蚁 Agent 分别领取和执行任务；
-- 兵蚁 Agent 负责验证结果或处理失败；
-- Monad 智能合约负责托管预算、约束状态流转、记录贡献并结算报酬；
-- 链上事件成为公开的「信息素」，驱动 Agent 响应和前端动画。
+> 用户提交目标并锁定 MON；Queen 将目标拆成多个独立微任务；不同技能的 Worker Ant 在 Monad 上并发领取任务、提交结果承诺；Guard Ant 验证后，合约按贡献自动结算。
 
-原始设想覆盖图像、语言、教育、法律、存储和后勤等多个领域。考虑到比赛时间有限，第一版不能同时实现所有能力，而应证明一个最关键的闭环。
+### 最终技术选择
 
-## 2. 核心定位
+| 层 | MVP 选择 |
+| --- | --- |
+| 合约 | 一个 `AntColony.sol` |
+| 网络 | Monad Testnet，Chain ID `10143` |
+| 合约工具 | Solidity + Monad Foundry |
+| Web | Next.js App Router + TypeScript + Tailwind CSS |
+| 钱包与 RPC | wagmi + viem + injected wallet |
+| 后端 | Next.js Route Handlers，Node.js Runtime |
+| AI 执行 | 默认 Deterministic Mock，真实 API 仅作可选增强 |
+| 数据模式 | Mock Adapter + Monad Adapter |
+| 数据库 | 不使用 |
+| 部署 | 合约部署到 Monad Testnet，Web 部署到 Vercel |
 
-### 2.1 推荐定位
+### Monad 技术展示
 
-> **AntForge 是一个构建在 Monad 上的 Agent 微任务协作与结算网络：蚁后拆解目标，工蚁并行执行，兵蚁验证结果，合约按贡献实时结算。**
+- **Swarm Lane**：多个 Agent 操作不同 `taskId`，展示低冲突、并行友好的任务状态；
+- **Conflict Lane**：多个 Agent 竞争同一 `taskId`，只有第一只成功；
+- **Skill Guard**：Rogue Ant 没有所需技能，链上触发 `SkillMismatch`；
+- **Micro Settlement**：每个微任务独立结算小额 MON；
+- **Fast Feedback**：交易和事件快速驱动前端蚁群状态。
 
-英文定位：
+### 优先级
+
+```text
+可运行闭环
+> 真实 Testnet 证据
+> Monad 原生机制
+> Demo 稳定性
+> 功能数量
+> UI 精致度
+```
+
+## 2. 产品定位
+
+### 2.1 一句话
+
+> **AntForge 是一个 Monad-native 的 Agent 微任务协作与结算网络：蚁后拆解目标，工蚁并行执行，兵蚁验证结果，合约按贡献实时结算。**
+
+英文：
 
 > **A Monad-native swarm execution and settlement network for autonomous agents.**
 
-口号候选：
+口号：
 
 > **One goal. A thousand ants. One autonomous economy.**<br>
 > **一个目标，千只 Agent，一套自治经济。**
 
-### 2.2 它不应该是什么
-
-项目不应退化为：
-
-- 披着蚂蚁视觉皮肤的 Agent 应用商店；
-- 用户选择一个 Agent、支付一次费用、获得一次结果的普通 Marketplace；
-- 只在最后加入一笔链上付款的中心化 AI 应用；
-- 同时覆盖十几个行业、但没有一个完整闭环的 Agent 大杂烩；
-- 依靠自研 Token、NFT 或 DAO 包装的概念项目。
-
-普通 Marketplace 的流程是：
+### 2.2 与普通 Agent Marketplace 的区别
 
 ```text
-用户寻找 Agent
-→ 购买服务
-→ Agent 返回结果
-```
+普通 Marketplace
+用户寻找 Agent → 购买一次服务 → Agent 返回结果
 
-AntForge 的目标流程是：
-
-```text
-用户提交复杂目标
-→ Queen 拆解微任务和预算
-→ 多个 Worker 组成临时蚁群
-→ Worker 并行执行
-→ Guard 验证结果
+AntForge
+用户提交目标和预算
+→ Queen 创建临时 Colony
+→ 多个 Worker 并行处理微任务
+→ Guard 验证
 → 合约分别结算
-→ Queen 汇总最终交付物
+→ Queen 汇总结果
 ```
 
-项目真正独特的对象不是某一只 Agent，而是：
+创新对象不是某一只 Agent，而是一支按目标临时形成、按技能分工、按贡献结算的机器劳动力团队。
 
-> 一支围绕具体目标临时形成、按贡献结算、任务完成后自动解散的机器劳动力团队。
+### 2.3 明确不做
 
-## 3. 产品价值
+- 多行业 Agent 商城；
+- 自研 Token、NFT、DAO；
+- 多链；
+- 竞价市场、质押、Slashing；
+- 多验证者仲裁；
+- 完整 RAG 和长期记忆；
+- 去中心化文件存储；
+- x402 / MPP 深度集成；
+- Factory、CREATE2、每任务独立 Escrow；
+- 独立 FastAPI 和数据库；
+- 复杂 3D、WebGL 和冗长营销页面。
 
-### 3.1 对任务发布者
+## 3. MVP Showcase
 
-- 只需描述目标和预算；
-- 不需要理解每个 Agent 的接口和能力；
-- 不需要分别寻找、支付和管理多个服务；
-- 可以追踪谁领取了任务、提交了什么结果、获得了多少报酬；
-- 可以通过链上证据验证关键协作与结算记录。
+### 3.1 场景
 
-### 3.2 对 Agent 服务提供者
+用户选择一张内置老照片，并提交：
 
-- 可以只提供一种狭窄但专业的能力；
-- 不需要成为全能 Agent；
-- 能够被其他 Agent 自动发现和雇佣；
-- 每次贡献都可以形成可验证的履历和收入记录；
-- 可以通过技能、价格、成功记录和响应速度参与任务匹配。
+> 修复照片、完成上色，并生成一段纪念文案。
 
-### 3.3 长期商业模式
+图片不上传链。MVP 使用项目内置原图和结果文件，避免文件上传、对象存储和图像 API 成为关键路径。
 
-黑客松 MVP 不实现完整商业化，但项目可以演进为：
+### 3.2 Agent 队伍
 
-- 从任务结算中收取协议费；
-- 托管版 Queen Orchestrator 收取编排服务费；
-- 为企业提供私有 Colony 和按任务量计费的部署；
-- 为 Agent 提供者提供专业验证、托管和服务发现能力。
+| Agent | 技能 | 行为 |
+| --- | --- | --- |
+| Queen Ant | `PLAN` | 生成 3 个微任务和预算 |
+| Repair Ant | `IMAGE_REPAIR` | 返回修复结果 URI 和哈希 |
+| Color Ant | `IMAGE_COLORIZE` | 返回上色结果 URI 和哈希 |
+| Story Ant | `STORY_WRITE` | 返回纪念文案和哈希 |
+| Guard Ant | `VERIFY` | 验证结果结构、哈希和任务关联 |
+| Rogue Ant | 无匹配技能 | 尝试领取 Repair Task 并失败 |
 
-第一版不引入自研 Token、Agent NFT 或 DAO。
+### 3.3 AI 执行策略
 
-## 4. 蚂蚁角色与 Agent 角色
+P0 使用确定性 Mock：
 
-| 蚂蚁角色 | Agent 定位 | 主要职责 | MVP 优先级 |
-| --- | --- | --- | --- |
-| 蚁后 Queen | Orchestrator | 理解目标、拆解任务、分配预算、汇总结果 | P0 |
-| 工蚁 Worker | Executor | 执行图像、文字或工具微任务 | P0 |
-| 兵蚁 Guard | Verifier | 检查结果、批准或拒绝、触发重试 | P0 |
-| 流浪蚁 Rogue | Unauthorized Agent | 尝试越权领取任务，用于证明合约防护有效 | P1，推荐进入 Demo |
-| 侦察蚁 Scout | Discovery / Bidding | 搜索 Agent、询价和选择执行者 | P2 |
-| 储粮蚁 Storage | Storage | 保存文件、CID、数据集和历史结果 | P1，可简化 |
-| 后勤蚁 Logistics | Recovery | 超时、重试和任务重新分配 | P2 |
+- 固定输入产生固定输出；
+- 输出使用内置文件或固定文本；
+- 每次生成稳定的 `outputURI` 和 `outputHash`；
+- 链上创建、领取、提交、验证和结算全部真实；
+- 页面明确显示 `Agent Execution: Mock`；
+- 不把 Mock 结果描述成真实模型输出。
 
-### 4.1 信息素机制
+如果时间充足，只替换一个 Worker 为真实 AI Adapter，不改变主流程。
 
-链上事件是公开的「信息素信号」：
+黑客松真正验证的是身份、技能、并发任务、排他领取、结果承诺、验证、Escrow 和结算，不是图像模型质量。
 
-```solidity
-event TaskCreated(bytes32 indexed taskId, bytes32 skill, uint256 reward);
-event TaskClaimed(bytes32 indexed taskId, address indexed worker);
-event ResultSubmitted(bytes32 indexed taskId, bytes32 outputHash);
-event ResultVerified(bytes32 indexed taskId, address indexed verifier);
-event RewardReleased(bytes32 indexed taskId, address indexed worker, uint256 amount);
-event TaskRejected(bytes32 indexed taskId, bytes32 reasonHash);
-```
+## 4. MVP 用户流程
 
-技术表达必须保持准确：
-
-> Event 本身不是完整的 Agent 通信协议，而是 Agent 可以监听并响应的公开链上信号。
-
-前端根据这些事件驱动蚂蚁移动、任务节点变化和奖励动画，使视觉效果与真实链上状态保持一致。
-
-## 5. 为什么选择 Monad
-
-### 5.1 当前官方技术参数
-
-截至本讨论稿创建时，Monad 官方文档公开表述为：
-
-- 约 10,000 TPS；
-- 400 ms 出块频率；
-- 400 ms 投机性最终性；
-- 800 ms 完整最终性；
-- EVM Fusaka 字节码兼容；
-- Ethereum RPC 兼容。
-
-此前讨论材料中出现过「300 ms 出块、600 ms 最终性」的表述。答辩和 README 应统一使用当前官方文档中的 400 ms / 800 ms，除非活动现场官方给出更新数据。
-
-### 5.2 不能只说「Monad 更快、更便宜」
-
-项目更强的 Monad 原生性论证是：
-
-> 一个复杂目标会被拆成大量彼此独立、细粒度、高频的状态更新与微结算。AntForge 刻意减少共享写入，使多个 Agent 对不同任务的交互适合 Monad 的乐观并行执行模型。
-
-### 5.3 并行执行与状态设计
-
-Monad 的并行执行仍然保持区块和交易的线性顺序。节点会乐观并行执行交易，跟踪读取集合和写入结果；如果后序交易读取了已经被前序交易修改的状态，则重新执行相关交易，最终结果与串行 EVM 一致。
-
-因此，合约应减少所有任务共同修改的热点状态，例如：
-
-```solidity
-nextTaskId++;
-totalTasks++;
-totalPaid++;
-globalAgentScore++;
-```
-
-推荐使用按任务隔离的状态：
-
-```solidity
-mapping(bytes32 taskId => Task) public tasks;
-mapping(address agent => Agent) public agents;
-mapping(bytes32 taskId => mapping(address verifier => bool)) public votes;
-```
-
-`taskId` 可以由链下确定性计算：
+### 4.1 正常流程
 
 ```text
-keccak256(requester, rootTaskId, subtaskIndex, salt)
+1. 用户连接钱包
+2. 用户选择 Demo 图片并输入目标
+3. Queen 返回 3 个确定性微任务
+4. 用户确认预算
+5. createColony 一笔交易创建并资助 3 个任务
+6. 3 个 Worker 钱包并发 claim 不同 taskId
+7. Agent Runner 生成确定性 Mock 输出
+8. Worker 提交 outputHash 和 outputURI
+9. Guard 分别 verifyAndSettle
+10. 前端按事件更新状态
+11. 用户查看最终结果、MON 分配和 Explorer 证据
 ```
 
-多个 Agent 操作不同 `taskId` 时，访问的是不同任务状态。多个 Agent 竞争同一个任务时，则会形成有意的状态冲突，只有一只 Agent 可以成功领取。
+### 4.2 Rogue Ant
 
-### 5.4 不过度设计
+```text
+Rogue Ant 没有 IMAGE_REPAIR 技能
+→ 尝试 claim Repair Task
+→ 合约检查 skillBitmap
+→ revert SkillMismatch
+→ UI 显示 Rogue Ant 被 Guard 拦截
+```
 
-为每个微任务部署一个独立 Escrow 合约，理论上可以进一步隔离状态，但对一天黑客松可能过度设计。
+### 4.3 Release the Swarm
 
-MVP 推荐使用一个结构清晰的核心合约，通过 `mapping(taskId => Task)` 隔离任务。只有在团队人数和现场时间充足时，才考虑 Factory、CREATE2 和 Minimal Proxy。
+```text
+Swarm Lane
+多钱包 → 多个不同 taskId → 并发 claim → 多个成功
 
-### 5.5 并发演示需要注意的事实
+Conflict Lane
+多钱包 → 同一个 taskId → 并发 claim → 仅一个成功
+```
 
-- 同一个钱包发送的交易受 nonce 顺序约束；
-- 前端使用 `Promise.all()` 不代表交易一定在不同 CPU 核心上执行；
-- 多个 Agent 抢同一个任务会产生状态冲突；
-- 多个 Agent 钱包分别操作不同任务，更符合无冲突并发模型；
-- 项目可以证明自身状态结构适合并行执行，但不应声称已经证明每笔交易在底层使用了不同 CPU 核心。
+两条 Lane 必须产生真实 Monad Testnet 交易。Mock 只能作为视觉后备，不能作为性能证据。
 
-## 6. 链上和链下边界
+## 5. 架构选择
 
-智能合约不能直接判断：
+### 5.1 采用 Next.js 全栈单体
 
-- 图片是否修得漂亮；
-- 文案是否感人；
-- 法律意见是否专业；
-- 模型推理过程是否具有语义质量。
+```text
+Next.js UI
++ Next.js Route Handlers
++ Monad Foundry Contracts
++ Vercel
+```
 
-合约应验证：
+选择原因：
 
-- Agent 是否已注册；
-- Agent 是否具备任务要求的技能；
-- 赏金是否已托管；
-- 谁获得了任务执行权；
-- 是否在截止时间内提交；
-- 输出哈希是否已经确定；
-- 验证者是否获得授权；
-- 验证签名是否对应指定结果；
-- 状态是否按照规则迁移；
-- 奖励是否已经结算；
-- 是否发生重复领取或重复付款。
+- 只有一个 Web 部署目标；
+- 不需要独立后端和 CORS；
+- Agent Testnet 私钥只进入 Vercel Server 环境变量；
+- Route Handler 可以使用 viem 发送交易并等待回执；
+- Mock 和 Live 共享 TypeScript 类型；
+- 最适合单日 MVP。
 
-推荐边界：
+Vercel Serverless 不适合常驻 Worker，因此每个 Colony 阶段拆成短请求。
 
-| 链下 | 链上 |
+### 5.2 拒绝的方案
+
+**Vite + FastAPI**：增加后端部署、CORS 和运维；Python AI 生态不是 P0。
+
+**纯浏览器 dApp**：无法安全保存 Agent 钱包；用户要手动签署所有 Worker 操作，无法体现 Agent 自动行动。
+
+## 6. 总体架构
+
+```text
+┌─────────────────────────────────────────────────────┐
+│ Vercel                                              │
+│                                                     │
+│ Next.js Frontend                                    │
+│ ├── Mission Composer                                │
+│ ├── Colony Map                                      │
+│ ├── Swarm / Conflict Console                        │
+│ └── Explorer Evidence                               │
+│          │                                          │
+│          ▼                                          │
+│ ColonyGateway interface                             │
+│ ├── MockColonyGateway                               │
+│ └── MonadColonyGateway ─────────────┐               │
+│                                     │               │
+│ Route Handlers                      │               │
+│ ├── /api/queen/plan                 │               │
+│ ├── /api/swarm/claim                │               │
+│ ├── /api/swarm/submit               │               │
+│ └── /api/swarm/settle               │               │
+│          └── Testnet Agent Signers ─┤               │
+└─────────────────────────────────────┼───────────────┘
+                                      │ viem / RPC
+                                      ▼
+┌─────────────────────────────────────────────────────┐
+│ Monad Testnet                                      │
+│ AntColony.sol                                      │
+│ ├── Agent Registry                                 │
+│ ├── Colony / Task State                            │
+│ ├── Skill Guard                                    │
+│ ├── Native MON Escrow                              │
+│ └── Pheromone Events                               │
+└─────────────────────────────────────────────────────┘
+```
+
+### 权威数据
+
+| 模式 | 权威来源 |
 | --- | --- |
-| AI 推理 | Agent 身份与技能 |
-| 图像处理 | 任务状态机 |
-| 目标拆解 | 输入、输出哈希 |
-| 语义质量判断 | 验证授权与记录 |
-| 文件和大段文本存储 | Escrow 与付款 |
-| API Key 和隐私数据 | 贡献记录与事件 |
+| Mock | 浏览器内 `MockColonyGateway` |
+| Live | Monad Testnet 合约、回执和事件 |
+| Agent Output | Route Handler 返回内容，链上保存哈希 |
+| 部署证据 | `deployments/monad-testnet.json` |
 
-合约提供的核心价值是：
+MVP 不使用数据库。Live 状态以合约为准。
 
-> 多个互不信任的 Agent 之间可验证的协作状态机与结算规则。
+## 7. 目录结构
 
-## 7. 合约概念模型
+```text
+monad-agent-ant-workshop/
+├── contracts/
+│   ├── foundry.toml
+│   ├── src/AntColony.sol
+│   ├── test/AntColony.t.sol
+│   └── script/DeployAntColony.s.sol
+├── web/
+│   ├── app/
+│   │   ├── api/queen/plan/route.ts
+│   │   ├── api/swarm/claim/route.ts
+│   │   ├── api/swarm/submit/route.ts
+│   │   ├── api/swarm/settle/route.ts
+│   │   └── page.tsx
+│   ├── src/
+│   │   ├── domain/
+│   │   ├── gateways/
+│   │   ├── agents/
+│   │   ├── contracts/
+│   │   ├── components/
+│   │   └── server/
+│   └── public/demo/
+├── deployments/monad-testnet.json
+├── submissions/evidence.md
+└── docs/
+```
 
-以下是讨论阶段的推荐概念，尚未锁定为最终接口。
+## 8. 合约设计
 
-### 7.1 Agent
+### 8.1 一个合约
+
+`AntColony.sol` 同时承担：
+
+- Agent Registry；
+- Colony / Task 状态；
+- 技能约束；
+- Native MON Escrow；
+- 状态机；
+- 事件。
+
+不拆多个合约，避免增加部署、地址管理、冷外部调用和前端接入成本。
+
+### 8.2 技能位图
+
+```solidity
+uint256 constant SKILL_IMAGE_REPAIR = 1 << 0;
+uint256 constant SKILL_IMAGE_COLORIZE = 1 << 1;
+uint256 constant SKILL_STORY_WRITE = 1 << 2;
+uint256 constant SKILL_VERIFY = 1 << 3;
+```
+
+领取条件：
+
+```text
+agent.skills & task.requiredSkill != 0
+```
+
+### 8.3 数据结构
 
 ```solidity
 struct Agent {
-    address owner;
-    uint256 skillBitmap;
+    uint256 skills;
     bytes32 metadataHash;
-    uint96 basePrice;
-    uint32 completedTasks;
-    uint32 reputation;
     bool active;
 }
-```
 
-### 7.2 Task
-
-```solidity
 enum TaskStatus {
+    None,
     Open,
     Claimed,
     Submitted,
-    Verified,
     Settled,
     Rejected,
     Cancelled
 }
 
 struct Task {
+    bytes32 colonyId;
     address requester;
     address worker;
     address verifier;
-    bytes32 requiredSkill;
+    uint256 requiredSkill;
     bytes32 inputHash;
     bytes32 outputHash;
     uint96 reward;
@@ -276,285 +338,651 @@ struct Task {
 }
 ```
 
-### 7.3 核心动作
+P0 不保存价格、质押、声誉和 Endpoint。
+
+`outputURI` 放在事件中，链上状态只保存 `outputHash`。
+
+### 8.4 状态机
 
 ```text
-registerAgent
-createTask
-claimTask
-submitResult
-verifyResult
-settleTask
-cancelExpiredTask
+None → Open
+Open → Claimed
+Claimed → Submitted
+Submitted → Settled
+Submitted → Rejected
+Open / Claimed / Submitted → Cancelled after deadline
 ```
 
-完整图片、Prompt、大段文本、模型推理过程、API Key 和隐私数据不写入链上。
+Guard 的批准和结算合并为一次 `verifyAndSettle`，不增加独立 `Verified` 状态。
 
-## 8. 推荐 MVP Showcase：老照片复原蚁群
-
-### 8.1 用户目标
-
-用户上传一张老照片，并提交：
-
-> 修复照片、完成上色，并生成一段纪念文案。
-
-### 8.2 最小 Agent 队伍
-
-- **Queen Ant**：接收目标，生成微任务并分配预算；
-- **Repair Ant**：执行图像增强或修复；
-- **Story Ant**：生成照片说明或纪念文案；
-- **Guard Ant**：验证文件存在、哈希匹配、格式和任务关联；
-- **Rogue Ant**：没有图像修复技能，却尝试领取 Repair 任务。
-
-### 8.3 必须真实上链的闭环
+### 8.5 确定性 ID
 
 ```text
-注册 Agent
-→ 创建任务并锁定 MON
-→ 检查技能
-→ 领取任务
-→ 提交结果哈希
-→ Guard 验证
-→ 自动结算
-→ Explorer 验证
+taskId = keccak256(requester, colonyId, subtaskIndex, inputHash)
 ```
 
-AI 执行可以为了稳定性适度简化，但链上身份、技能约束、状态迁移、Escrow、付款和交易证据必须真实。
+避免全局 `nextTaskId++` 热点。
 
-### 8.4 Showcase 与协议的关系
+### 8.6 核心接口
 
-```text
-AntForge：通用 Agent 蚁群协作与结算协议
-老照片复原：第一个易理解、易展示的 Showcase
+```solidity
+registerAgent(uint256 skills, bytes32 metadataHash)
+
+createColony(
+    bytes32 colonyId,
+    TaskInput[] tasks,
+    address verifier
+) payable
+
+claimTask(bytes32 taskId)
+
+submitResult(
+    bytes32 taskId,
+    bytes32 outputHash,
+    string outputURI
+)
+
+verifyAndSettle(bytes32 taskId)
+rejectAndRefund(bytes32 taskId, bytes32 reasonHash)
+cancelExpiredTask(bytes32 taskId)
 ```
 
-不能让评委最终只记住「这是一个 AI 修图工具」。
+`createColony`：
 
-## 9. Release the Swarm 技术演示
+- 一笔交易创建最多 8 个独立任务；
+- `sum(task.reward) == msg.value`；
+- Task ID 必须唯一；
+- Verifier 必须已注册并具备 `VERIFY`；
+- Deadline 必须有效。
 
-建议加入一个高冲击力按钮：
+### 8.7 权限和资金
 
-> **Release the Swarm｜释放蚁群**
-
-演示分为两条通道：
-
-### 9.1 Swarm Lane
-
-```text
-多个 Agent 钱包
-→ 同时操作多个不同 taskId
-→ 并发提交 claim / submit / settle
-→ 前端实时展示交易和区块信息
-```
-
-用于展示大量独立任务状态更新和微结算。
-
-### 9.2 Conflict Lane
-
-```text
-多个 Agent 同时竞争同一个 taskId
-→ 第一只成功领取
-→ 其他交易因状态变化失败
-```
-
-用于展示任务排他性、状态冲突和合约防止重复领取的能力。
-
-页面可以展示：
-
-```text
-Active Ants
-Tasks Created
-Tasks Settled
-Unauthorized Claims Blocked
-Onchain Actions
-Average Confirmation Latency
-Total Rewards
-Network: Monad
-```
-
-## 10. 前端视觉方向
-
-前端不做传统 SaaS Dashboard 加静态蚂蚁图片，而是做一张动态的「Monad 沙丘蚁穴剖面图」。
-
-核心空间：
-
-```text
-Queen Chamber
-├── Repair Chamber
-├── Story Chamber
-├── Guard Chamber
-└── Treasury Chamber
-```
-
-视觉映射：
-
-| 链上事件 | 前端表现 |
+| 动作 | 权限 |
 | --- | --- |
-| RootTaskCreated | 蚁后房间点亮 |
-| TaskCreated | 新任务卵生成 |
-| TaskClaimed | 工蚁沿通道前往任务室 |
-| ResultSubmitted | 工蚁携带数据晶体返回 |
-| ResultRejected | 通道变红，任务重新开放 |
-| RewardReleased | MON 粒子进入工蚁粮仓 |
-| UnauthorizedClaim | Rogue Ant 被兵蚁拦截 |
+| 注册 Agent | 任意地址 |
+| 创建 Colony | 任意地址 |
+| 领取 | Active 且技能匹配的 Agent |
+| 提交 | 当前 Worker |
+| 验证和结算 | 指定 Verifier |
+| 拒绝和退款 | 指定 Verifier |
+| 超时取消 | Requester |
 
-重点是事件驱动，而不是复杂 3D。SVG、CSS Animation、Canvas 或 React Flow 都可以实现。每一个重要动画应对应真实任务状态或链上事件。
+资金规则：
 
-## 11. 比赛约束
+- 使用 Native MON；
+- 使用 Checks-Effects-Interactions；
+- 结算和退款使用 `nonReentrant`；
+- 先更新状态，再转账；
+- 转账失败时整笔回滚；
+- 不收协议费；
+- 不支持升级；
+- 不设置管理员提款后门。
 
-根据赛前整理的官方规则：
+### 8.8 Pheromone Events
 
-- 项目必须在正式比赛期间开始实现；
-- 允许赛前头脑风暴和规划；
-- 团队最多 3 人；
-- 项目仓库必须公开；
-- 前端必须部署到公网并长期可访问；
-- 项目应在 Monad 测试网上实际运行；
-- 提交截止时间为 18:30；
-- 每队 Demo 时间为 5 分钟；
-- 主要受众是开发者；
-- 评审关注核心要求、完成度和商业模式；
-- 实机演示和真实链上证据是核心。
-
-比赛正式项目已使用全新仓库：
-
-- GitHub：<https://github.com/NeoWeb3Nova/monad-agent-ant-workshop>
-- 本地：`/home/neo/workspace/projects/monad-agent-ant-workshop`
-
-## 12. 范围优先级
-
-### P0：必须完成
-
-1. Agent 注册；
-2. 创建任务并锁定 MON；
-3. 技能检查；
-4. 领取任务；
-5. 提交输出哈希；
-6. Guard 验证；
-7. 自动付款；
-8. 前端显示任务状态、交易哈希和 Explorer 链接；
-9. 合约部署到 Monad 测试网；
-10. 前端部署到公网。
-
-### P1：决定 Demo 效果
-
-1. Queen 任务拆解；
-2. 3～4 只可演示 Agent；
-3. Monad 沙丘蚁穴动态地图；
-4. Rogue Ant 的 `SkillMismatch` 失败路径；
-5. `Release the Swarm` 并发任务演示；
-6. 真实 Monad 区块和确认时间展示。
-
-### P2：有余力再做
-
-1. Agent 竞价；
-2. 多验证者投票；
-3. 质押和惩罚；
-4. x402 或 MPP；
-5. 自动发现协议；
-6. 去中心化存储；
-7. 复杂争议仲裁；
-8. Factory、CREATE2 和每任务独立 Escrow。
-
-### 明确砍掉
-
-- 多行业 Agent 商城；
-- Agent NFT；
-- DAO 和蚁后选举；
-- 自研 Token；
-- 多链；
-- 十几个真实 AI Agent；
-- 复杂 RAG 和长期记忆系统。
-
-## 13. 主要风险与缓解策略
-
-### 13.1 Agent 赛道拥挤
-
-风险：多 Agent、链上支付和声誉已经很常见，蚂蚁叙事本身不是技术差异化。
-
-缓解：突出「冲突感知的并行微任务状态结构、实时事件驱动协作、技能约束和按任务结算」。
-
-### 13.2 范围过大
-
-风险：原始设想同时包含市场、编排、存储、验证、竞价、声誉、x402、图像处理和动态前端。
-
-缓解：只保证 P0 闭环，P1 按时间逐项加入，P2 不作为交付承诺。
-
-### 13.3 AI 功能抢走链上主体
-
-风险：大量时间用于图像 API，最后智能合约只剩简单付款。
-
-缓解：AI 负责让 Demo 易理解，真正的技术主体是身份、技能、状态机、验证、Escrow 和结算。
-
-### 13.4 过度宣称并行性能
-
-风险：前端并发发送交易不能直接证明底层 CPU 调度。
-
-缓解：准确表述为「状态结构减少冲突并适合并行执行」，并通过 Swarm Lane 和 Conflict Lane 展示应用层差异。
-
-### 13.5 外部服务不稳定
-
-风险：图像模型、RPC、存储或 API 在现场失败。
-
-缓解：准备稳定的简化执行路径、预生成结果、截图和录屏；真实链上状态机不能被 Mock 替代。
-
-## 14. 五分钟 Demo 草案
-
-```text
-0:00–0:20  直接展示用户目标：修复照片、上色、生成纪念文案
-0:20–0:50  Queen 拆解任务，任务卵进入不同工坊
-0:50–1:40  多只工蚁领取并执行不同任务
-1:40–2:10  Rogue Ant 越权领取，被 SkillMismatch 拒绝
-2:10–2:50  工蚁提交结果，Guard 验证
-2:50–3:30  多个任务自动结算，奖励进入粮仓
-3:30–4:20  Release the Swarm：Swarm Lane 与 Conflict Lane
-4:20–4:50  打开 Explorer，展示合约地址和真实交易
-4:50–5:00  总结为什么必须使用 Monad
+```solidity
+event AgentRegistered(address indexed agent, uint256 skills);
+event ColonyCreated(bytes32 indexed colonyId, address indexed requester, uint256 taskCount);
+event TaskCreated(bytes32 indexed colonyId, bytes32 indexed taskId, uint256 skill, uint256 reward);
+event TaskClaimed(bytes32 indexed taskId, address indexed worker);
+event ResultSubmitted(bytes32 indexed taskId, address indexed worker, bytes32 outputHash, string outputURI);
+event TaskSettled(bytes32 indexed taskId, address indexed worker, uint256 reward);
+event TaskRejected(bytes32 indexed taskId, bytes32 reasonHash);
+event TaskCancelled(bytes32 indexed taskId);
 ```
 
-核心答辩表达：
+MVP 直接读取标准事件，不部署 Indexer。
 
-> 现有 Agent 平台通常让一个 Agent 完成一个任务，但复杂现实工作需要规划者、执行者、验证者和支付系统协同工作。AntForge 把一个复杂目标拆成大量独立微任务，让不同专业 Agent 像蚁群一样并行协作、提交证明，并通过 Monad 智能合约实时完成验证和结算。
+## 9. Monad 原生功能
 
-为什么是 Monad：
+### 9.1 低冲突状态
 
-> 蚁群经济不是每天发生几笔大交易，而是持续产生大量细粒度、高频、彼此独立的任务状态更新和微结算。AntForge 通过按任务隔离状态、减少共享写入，使这种协作模式能够受益于 Monad 的并行 EVM、快速最终性和 EVM 兼容性。
+不同 Worker 分别写入：
 
-## 15. 已确定与待确认事项
+```text
+tasks[repairTaskId]
+tasks[colorTaskId]
+tasks[storyTaskId]
+```
 
-### 已确定
+不共同修改全局任务计数、总支付、全局队列或全局声誉。
 
-- 中文项目名：`Monad沙丘上的Agent蚂蚁工坊`；
-- 英文品牌：`AntForge on Monad`；
-- 使用全新公开 GitHub 仓库；
-- 项目必须基于 Monad 并包含真实上链智能合约；
-- 核心叙事是 Agent 蚁群协作，而不是 Agent 商城；
-- 正式比赛已经开始，可以进入项目实现阶段。
+准确表述：
 
-### 讨论形成的推荐方向，尚待最终锁定
+> AntForge 通过按 `taskId` 隔离状态来减少冲突，使任务交互适合 Monad 的乐观并行执行。
 
-- 以「通用 Agent 微任务协作与结算协议」为核心；
-- 以「老照片复原蚁群」为 Showcase；
-- 以「Release the Swarm」作为 Monad 技术加分项；
-- MVP 使用单一核心合约加按 `taskId` 隔离的状态；
-- AI 推理保持链下，身份、状态、验证和结算上链。
+不宣称应用能够控制底层 CPU 调度。
 
-### 开发前仍需确认
+### 9.2 Swarm Lane
 
-1. 现场实际团队人数和成员技能；
-2. 最终 Showcase 是否确定为老照片复原；
-3. P0 合约是单一合约还是 Registry + Colony 两个合约；
-4. AI 执行采用真实 API、本地处理还是稳定 Mock；
-5. 前端采用 Vite 还是 Next.js；
-6. 部署平台和 Monad 测试网钱包是否已经准备完毕。
+多个 Testnet Agent 钱包通过 `Promise.allSettled()` 并发领取不同任务。
 
-## 16. 官方参考资料
+前端显示真实交易哈希、区块、Receipt 时间、成功数量和平均确认时间。
 
+### 9.3 Conflict Lane
+
+多个 Agent 同时领取同一任务：
+
+- 第一笔成功；
+- 其他交易因 `TaskNotOpen` 失败；
+- UI 展示赢家和冲突失败。
+
+### 9.4 微结算与快速反馈
+
+每个任务分配小额 MON。具体金额由 Testnet 余额决定，不写死在合约中。
+
+Monad 约 400 ms 出块、约 800 ms 完整最终性，使领取、提交和结算可以快速驱动前端状态。
+
+### 9.5 Gas
+
+Monad 按 `gas_limit` 收费：
+
+- 估算只加最多 10% 缓冲；
+- 不使用夸张 Gas Limit；
+- 不在链上扫描 Agent 或 Task 数组；
+- 动态 URI 进入事件，不长期存储；
+- Demo 记录关键写操作的 Gas Limit。
+
+## 10. 后端设计
+
+### 10.1 职责
+
+Route Handlers 只负责：
+
+- Queen 的确定性任务规划；
+- 使用 Testnet Agent 钱包发送 Worker / Guard 交易；
+- 生成确定性 Mock 输出；
+- 返回交易哈希、Receipt 和规范化错误。
+
+不负责：
+
+- 保存权威 Task 状态；
+- 数据库；
+- 文件上传；
+- 常驻事件监听；
+- 替代合约权限检查。
+
+### 10.2 路由
+
+```text
+POST /api/queen/plan
+POST /api/swarm/claim
+POST /api/swarm/submit
+POST /api/swarm/settle
+GET  /api/health
+```
+
+Queen P0 使用固定模板，不调用 LLM。
+
+Swarm Route：
+
+- 只允许预定义演示动作和目标合约；
+- 校验 `colonyId`、`taskId` 和场景；
+- 使用预配置 Agent 地址；
+- 用 `Promise.allSettled()` 保留每笔结果；
+- 返回真实交易哈希或真实错误；
+- 不返回伪成功。
+
+每个阶段使用独立请求，避免 Vercel 超时。
+
+### 10.3 Agent 私钥
+
+```text
+REPAIR_AGENT_PRIVATE_KEY
+COLOR_AGENT_PRIVATE_KEY
+STORY_AGENT_PRIVATE_KEY
+GUARD_AGENT_PRIVATE_KEY
+ROGUE_AGENT_PRIVATE_KEY
+```
+
+规则：
+
+- 只使用 Testnet 专用钱包；
+- 每个钱包只保留少量 Testnet MON；
+- 私钥不使用 `NEXT_PUBLIC_*`；
+- 不返回浏览器、不写日志；
+- 路由只能操作指定合约和预定义函数；
+- Demo 前提前充值并等待 Reserve Balance 状态可用。
+
+## 11. 前端设计
+
+### 11.1 单页结构
+
+```text
+Header
+├── Monad Network
+├── Mock / Live Badge
+└── Connect Wallet
+
+Mission Composer
+├── Demo Photo
+├── Goal
+├── Budget
+└── Create Colony
+
+Colony Map
+├── Queen
+├── Repair
+├── Color
+├── Story
+├── Guard
+└── Treasury
+
+Swarm Console
+├── Claim
+├── Submit
+├── Settle
+├── Swarm Lane
+└── Conflict Lane
+
+Evidence Panel
+├── Contract Address
+├── Transaction Hashes
+├── Block / Latency
+└── Explorer Links
+```
+
+### 11.2 视觉约束
+
+- Monad 沙丘和地下蚁穴主题；
+- CSS + SVG；
+- 简单 CSS Transition 或轻量动画；
+- 状态变化驱动动画；
+- 不做 Three.js、WebGL、复杂粒子和完整设计系统。
+
+事件映射：
+
+| 状态 | UI |
+| --- | --- |
+| `ColonyCreated` | Queen 点亮 |
+| `TaskCreated` | Task Cell 出现 |
+| `TaskClaimed` | Ant 移向任务 |
+| `ResultSubmitted` | Ant 携带结果返回 |
+| `TaskSettled` | MON 进入 Worker Cell |
+| `SkillMismatch` | Rogue Ant 被拦截 |
+| Conflict 失败 | 输家变灰并标记冲突 |
+
+## 12. Mock / Live 双模式
+
+### 12.1 两个独立模式轴
+
+```text
+NEXT_PUBLIC_DATA_MODE=mock | live
+AGENT_EXECUTION_MODE=mock | api
+```
+
+P0 推荐：
+
+```text
+DATA_MODE=live
+AGENT_EXECUTION_MODE=mock
+```
+
+链上流程真实，AI 输出稳定。
+
+### 12.2 共享模型与接口
+
+Mock 和 Live 共享 `Agent`、`Task`、`Colony`、`TaskStatus`、`ColonyEvent` 和 UI。
+
+```typescript
+interface ColonyGateway {
+  getAgents(): Promise<Agent[]>;
+  getColony(colonyId: Hex): Promise<Colony>;
+  createColony(input: CreateColonyInput): Promise<ChainActionResult>;
+  watchColony(colonyId: Hex, onEvent: (event: ColonyEvent) => void): () => void;
+}
+```
+
+Adapters：
+
+```text
+MockColonyGateway
+MonadColonyGateway
+```
+
+组件中不散落 `if (mock)`。
+
+### 12.3 真实性
+
+- Mock 必须显示 `Mock Mode`；
+- Live 必须来自 RPC、合约、Receipt 或事件；
+- Mock 哈希、余额和延迟不得标注为真实；
+- Live 失败时显示真实错误；
+- 不静默回退并伪装成功。
+
+## 13. 错误处理
+
+合约使用自定义错误：
+
+```solidity
+error AgentInactive();
+error SkillMismatch();
+error TaskNotOpen();
+error UnauthorizedWorker();
+error UnauthorizedVerifier();
+error InvalidRewardTotal();
+error InvalidTaskCount();
+error DeadlineExpired();
+error TransferFailed();
+```
+
+前端将错误转换为可演示信息：
+
+| 错误 | UI 文案 |
+| --- | --- |
+| `SkillMismatch` | Rogue Ant 没有所需技能，被 Guard 拦截 |
+| `TaskNotOpen` | 任务已经被其他 Agent 领取 |
+| `UnauthorizedWorker` | 当前 Agent 不是任务 Worker |
+| `UnauthorizedVerifier` | 当前 Agent 不是指定 Guard |
+| `DeadlineExpired` | 任务已过期 |
+| `TransferFailed` | 结算失败，交易已回滚 |
+
+Route Handler 统一返回：
+
+```json
+{
+  "ok": false,
+  "code": "SKILL_MISMATCH",
+  "message": "Rogue Ant cannot claim IMAGE_REPAIR task.",
+  "txHash": null
+}
+```
+
+## 14. 快速验证，不做 TDD
+
+不采用严格 TDD，不要求先写测试再实现。
+
+```text
+先实现最小逻辑
+→ 本地跑通 Happy Path
+→ 补关键合约测试
+→ 部署 Testnet
+→ 回读真实状态
+→ 接入前端
+→ 浏览器实机验证
+```
+
+### 最小合约测试
+
+只覆盖：
+
+1. 注册 Agent；
+2. 创建 Colony 并锁定正确奖励；
+3. 合法 Agent 领取；
+4. Rogue Ant 触发 `SkillMismatch`；
+5. 同一任务不能重复领取；
+6. 非 Worker 不能提交；
+7. 非 Guard 不能结算；
+8. Guard 结算后 Worker 收到正确 MON；
+9. 不能重复结算；
+10. 超时取消可以退款。
+
+不做 Fuzz、Invariant、Formal Verification、Mutation Testing、覆盖率目标和 UI 单元测试体系。
+
+### 前端检查
+
+```bash
+npm run lint
+npm run typecheck
+npm run build
+```
+
+浏览器只验证核心 Demo 路径和阻断性 Console 错误。
+
+## 15. 开发与部署路径
+
+### Phase 1：Contracts
+
+```text
+初始化 Monad Foundry
+→ 实现 AntColony.sol
+→ 最小测试
+→ forge fmt / build / test
+```
+
+### Phase 2：Testnet
+
+```text
+部署
+→ cast receipt
+→ cast code
+→ cast call
+→ 验证源码
+→ 写入 deployments/monad-testnet.json
+```
+
+### Phase 3：Web Mock
+
+```text
+创建 Next.js
+→ TypeScript target 设置为 ES2020
+→ 安装 wagmi / viem
+→ 单页布局
+→ MockColonyGateway
+→ Mock 闭环
+```
+
+### Phase 4：Live
+
+```text
+接入 ABI 和地址
+→ MonadColonyGateway
+→ Agent Route Handlers
+→ 注册 Agent 钱包
+→ 真实领取、提交和结算
+```
+
+### Phase 5：Monad Showcase
+
+```text
+Rogue Ant
+→ Swarm Lane
+→ Conflict Lane
+→ Latency / Gas / Explorer Evidence
+```
+
+### Phase 6：Vercel
+
+```text
+Root Directory = web
+→ 配置环境变量
+→ Production Build
+→ Deploy
+→ 匿名访问验证
+→ Live 流程验证
+```
+
+### Phase 7：Submission
+
+```text
+更新 README 和 evidence
+→ 录制备用 Demo
+→ GitHub 切换 Public
+→ MOJO 提交
+```
+
+## 16. Vercel 配置
+
+```text
+Framework: Next.js
+Root Directory: web
+Build Command: npm run build
+Node Runtime: 20.x
+```
+
+Public：
+
+```text
+NEXT_PUBLIC_DATA_MODE=live
+NEXT_PUBLIC_MONAD_RPC_URL=https://testnet-rpc.monad.xyz
+NEXT_PUBLIC_CHAIN_ID=10143
+NEXT_PUBLIC_ANT_COLONY_ADDRESS=0x...
+NEXT_PUBLIC_EXPLORER_URL=https://testnet.monadexplorer.com
+```
+
+Server-only：
+
+```text
+AGENT_EXECUTION_MODE=mock
+REPAIR_AGENT_PRIVATE_KEY=...
+COLOR_AGENT_PRIVATE_KEY=...
+STORY_AGENT_PRIVATE_KEY=...
+GUARD_AGENT_PRIVATE_KEY=...
+ROGUE_AGENT_PRIVATE_KEY=...
+```
+
+风险：
+
+| 风险 | 缓解 |
+| --- | --- |
+| Route 超时 | 阶段拆成独立短请求 |
+| RPC 限流 | 不轮询，限制任务数量 |
+| Serverless 无持久内存 | Live 以合约为准，Mock 在浏览器 |
+| Agent 钱包余额不足 | 提前充值并逐个检查 |
+| 环境变量缺失 | `/api/health` 只返回配置状态 |
+| 地址未同步 | Deployment JSON 与 Vercel Env 同步 |
+
+## 17. 五分钟 Demo
+
+```text
+0:00–0:20  展示目标和 Colony Map
+0:20–0:50  用户一笔交易创建并资助 3 个任务
+0:50–1:30  Release the Swarm：3 个 Agent 并发 claim
+1:30–1:55  Rogue Ant 触发 SkillMismatch
+1:55–2:35  Worker 提交，Guard 结算，MON 到账
+2:35–3:20  Conflict Lane：多个 Agent 抢同一任务
+3:20–4:10  展示哈希、区块、延迟、Gas 和 Explorer
+4:10–4:40  解释按 taskId 隔离的并行友好状态
+4:40–5:00  公网 URL、合约地址和商业延展
+```
+
+## 18. 范围和完成定义
+
+### P0
+
+- `AntColony.sol`；
+- Agent 注册、技能检查；
+- Colony 创建和 Native MON Escrow；
+- Claim、Submit、Verify + Settle；
+- Monad Testnet 部署和源码验证；
+- Mock / Live Adapter；
+- 单页前端；
+- Vercel 公网部署；
+- 真实交易和 Explorer 证据。
+
+### P1
+
+- Rogue Ant；
+- Swarm Lane；
+- Conflict Lane；
+- 多 Agent Testnet 钱包；
+- 事件驱动动画；
+- 实测确认时间和 Gas Limit；
+- 备用 Demo 录屏。
+
+### P2
+
+- 一个真实 AI Adapter；
+- Monad 扩展 WebSocket；
+- 输出文件上传；
+- Guard 奖励；
+- 更丰富动画。
+
+### 完成检查
+
+```text
+Contracts
+[ ] forge fmt / build / test 通过
+[ ] Testnet 地址存在字节码
+[ ] 关键状态可通过 cast call 读取
+[ ] 部署和关键交易可在 Explorer 查看
+[ ] 源码已验证
+
+Function
+[ ] 用户一笔创建并资助 Colony
+[ ] 3 个 Worker 领取不同任务
+[ ] Rogue Ant 因 SkillMismatch 失败
+[ ] Worker 提交结果哈希
+[ ] Guard 结算，余额变化可验证
+[ ] Conflict Lane 只有一个赢家
+
+Web
+[ ] Mock 和 Live 均可运行
+[ ] 当前模式清楚可见
+[ ] 交易哈希链接到 Explorer
+[ ] lint / typecheck / build 通过
+[ ] Vercel URL 可匿名访问
+
+Submission
+[ ] README、deployment 和 evidence 完整
+[ ] Demo 不超过 5 分钟
+[ ] 备用录屏可用
+[ ] 仓库切换为 Public
+[ ] MOJO 提交完成
+```
+
+## 19. 降级策略
+
+时间不足时依次删除：
+
+1. 真实 AI Adapter；
+2. 图片上传，改用内置图；
+3. 复杂动画，只保留状态和事件流；
+4. 扩展 WebSocket；
+5. Guard 奖励；
+6. 缩小 Swarm 任务数量。
+
+不能删除：
+
+- Testnet 合约；
+- Skill Guard；
+- Escrow；
+- Claim、Submit、Verify、Settle；
+- 一个真实失败路径；
+- Explorer 证据；
+- 公网前端。
+
+## 20. 商业延展
+
+MVP 不实现商业化。长期可以：
+
+- 对成功结算收取协议费；
+- 提供企业私有 Colony；
+- 提供托管 Queen 编排；
+- 接入 x402 / MPP；
+- 接入可验证存储和多 Guard 共识；
+- 建立跨应用 Agent 技能和履历网络。
+
+答辩只讲一个合理方向，不展开冗长 Roadmap。
+
+## 21. 最终原则
+
+```text
+一个合约
+一个网页
+一个 Showcase
+两条 Monad Lane
+一条真实资金闭环
+```
+
+新增功能必须同时满足：
+
+1. 让 Monad 优势更可见；
+2. 让核心闭环更可靠；
+3. 能在 5 分钟内展示；
+4. 值得增加失败风险。
+
+否则默认不做。
+
+## 22. 参考
+
+- 项目约束：`AGENTS.md`
+- 赛制：`docs/02-hackathon-rules.md`
+- Monad 工具：`docs/03-monad-tooling.md`
 - Monad for Developers：<https://docs.monad.xyz/introduction/monad-for-developers>
 - Parallel Execution：<https://docs.monad.xyz/monad-arch/execution/parallel-execution>
-- Best Practices for High Performance Apps：<https://docs.monad.xyz/developer-essentials/best-practices>
-- Agentic Payments：<https://docs.monad.xyz/tooling-and-infra/agentic-payments>
+- Best Practices：<https://docs.monad.xyz/developer-essentials/best-practices>
 
 ---
 
-本文件记录的是选题阶段形成的共同上下文。后续应在确认 MVP 方向后，另行编写实施规格和开发计划，不应直接把所有讨论项同时纳入实现范围。
+本文档是 MVP 设计基线。确认后，下一步基于本文档生成短周期实施计划，再开始正式编码。

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" role="img" aria-labelledby="title desc">
+  <title id="title">AntForge underground agent colony</title>
+  <desc id="desc">A dark underground ant colony cutaway with six glowing chambers and branching purple pheromone tunnels.</desc>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="78%"><stop offset="0" stop-color="#20113a"/><stop offset=".42" stop-color="#100a1f"/><stop offset="1" stop-color="#05060d"/></radialGradient>
+    <linearGradient id="soil" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f1d28"/><stop offset=".32" stop-color="#1d111b"/><stop offset="1" stop-color="#09070d"/></linearGradient>
+    <linearGradient id="tunnel" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#442260"/><stop offset=".48" stop-color="#a970ff"/><stop offset="1" stop-color="#40215c"/></linearGradient>
+    <radialGradient id="room" cx="50%" cy="48%" r="68%"><stop offset="0" stop-color="#21182f"/><stop offset=".6" stop-color="#120d1a"/><stop offset="1" stop-color="#06070d"/></radialGradient>
+    <radialGradient id="queen" cx="50%" cy="38%" r="64%"><stop offset="0" stop-color="#c79cff"/><stop offset=".28" stop-color="#7d3cff"/><stop offset=".72" stop-color="#2a1647"/><stop offset="1" stop-color="#080710"/></radialGradient>
+    <filter id="noise" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency=".42" numOctaves="3" seed="9" result="n"/><feColorMatrix in="n" type="saturate" values="0" result="g"/><feComponentTransfer in="g" result="a"><feFuncA type="table" tableValues="0 .16"/></feComponentTransfer><feBlend in="SourceGraphic" in2="a" mode="overlay"/></filter>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="softGlow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <pattern id="crystals" width="44" height="44" patternUnits="userSpaceOnUse"><path d="M13 33 20 10l8 23-8 6Z" fill="#8252d8" opacity=".22"/></pattern>
+    <clipPath id="world"><rect width="1200" height="820" rx="28"/></clipPath>
+  </defs>
+  <g clip-path="url(#world)">
+    <rect width="1200" height="820" fill="url(#bg)"/>
+    <path d="M0 84C175 20 343 49 514 37s347-49 686 38V820H0Z" fill="url(#soil)" filter="url(#noise)"/>
+    <path d="M0 106c188-59 341-26 510-43s355-38 690 29" fill="none" stroke="#6a4251" stroke-opacity=".25" stroke-width="2"/>
+    <rect y="95" width="1200" height="725" fill="url(#crystals)" opacity=".22"/>
+    <g fill="none" stroke-linecap="round">
+      <path d="M600 178C510 210 436 231 337 264M600 178C690 210 764 231 863 264M600 205C542 302 503 353 425 421M600 205C658 302 697 353 775 421M425 470C375 551 342 588 302 643M775 470C826 546 856 588 902 643M600 225V664M298 660C403 704 512 714 600 704s195-6 302-42" stroke="#271637" stroke-width="52"/>
+      <path d="M600 178C510 210 436 231 337 264M600 178C690 210 764 231 863 264M600 205C542 302 503 353 425 421M600 205C658 302 697 353 775 421M425 470C375 551 342 588 302 643M775 470C826 546 856 588 902 643M600 225V664M298 660C403 704 512 714 600 704s195-6 302-42" stroke="url(#tunnel)" stroke-width="11" opacity=".7" filter="url(#softGlow)"/>
+    </g>
+    <g stroke="#6d4a87" stroke-opacity=".48" stroke-width="3">
+      <path d="M103 176C145 127 278 116 364 160c52 27 58 111 19 157-48 56-201 55-268 9-50-35-52-105-12-150Z" fill="url(#room)"/>
+      <path d="M837 160c87-44 221-33 263 16 40 45 38 115-12 150-67 46-220 47-268-9-39-46-33-130 17-157Z" fill="url(#room)"/>
+      <path d="M100 365c53-45 181-43 261 0 49 26 57 104 18 148-49 54-199 55-269 12-52-32-59-115-10-160Z" fill="url(#room)"/>
+      <path d="M839 365c80-43 208-45 261 0 49 45 42 128-10 160-70 43-220 42-269-12-39-44-31-122 18-148Z" fill="url(#room)"/>
+      <path d="M132 579c65-42 191-40 261 3 44 27 45 99 7 139-52 54-208 52-271 1-40-33-38-109 3-143Z" fill="url(#room)"/>
+      <path d="M807 582c70-43 196-45 261-3 41 34 43 110 3 143-63 51-219 53-271-1-38-40-37-112 7-139Z" fill="url(#room)"/>
+      <path d="M487 101c43-51 183-51 226 0 37 44 27 122-26 156-55 35-119 36-174 0-53-34-63-112-26-156Z" fill="url(#queen)"/>
+    </g>
+    <g fill="#9b75dd" opacity=".25"><rect x="138" y="239" width="70" height="44" rx="6"/><rect x="222" y="230" width="70" height="52" rx="6"/><rect x="307" y="242" width="45" height="35" rx="5"/><rect x="849" y="230" width="82" height="52" rx="6"/><rect x="944" y="239" width="65" height="43" rx="6"/><rect x="1022" y="243" width="42" height="34" rx="5"/><rect x="151" y="438" width="64" height="40" rx="6"/><rect x="232" y="424" width="93" height="56" rx="7"/><rect x="865" y="438" width="64" height="40" rx="6"/><rect x="946" y="424" width="93" height="56" rx="7"/><rect x="172" y="651" width="54" height="45" rx="5"/><rect x="242" y="635" width="95" height="63" rx="7"/><rect x="865" y="640" width="70" height="58" rx="7"/><rect x="951" y="650" width="79" height="48" rx="7"/></g>
+    <g transform="translate(600 134)" filter="url(#glow)"><path d="M0-46 26-11 15 38 0 52-15 38-26-11Z" fill="#a46cff"/><path d="m0-46 0 98 15-14 11-49Z" fill="#d7bcff" opacity=".7"/><path d="m0-46-26 35 11 49L0 52Z" fill="#7f3cff" opacity=".78"/><path d="M-42-20-26-11-15 38-40 9Z" fill="#6430b7"/><path d="M42-20 26-11 15 38 40 9Z" fill="#8d4bef"/><circle r="7" fill="#fff"/></g>
+    <g fill="#9a6cff" filter="url(#softGlow)"><circle cx="600" cy="276" r="5"/><circle cx="600" cy="352" r="4"/><circle cx="600" cy="446" r="5"/><circle cx="600" cy="539" r="4"/><circle cx="600" cy="626" r="5"/><circle cx="421" cy="383" r="4"/><circle cx="779" cy="383" r="4"/><circle cx="355" cy="580" r="4"/><circle cx="845" cy="580" r="4"/></g>
+    <rect width="1200" height="820" fill="none" stroke="#8b65d4" stroke-opacity=".2" stroke-width="2"/>
+  </g>
+</svg>

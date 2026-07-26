@@ -2,280 +2,153 @@
 
 # AntForge on Monad
 
-**Monad 沙丘上的 Agent 蚂蚁工坊**
+**A settlement layer for autonomous agent swarms.**
 
-一个目标，多只 Agent，一套由 Monad 托管与结算的自治协作经济。
+One mission becomes a temporary, skill-matched machine workforce — verified and paid on Monad.
 
 [![Public Demo](https://img.shields.io/badge/Public_Demo-Live_Settlement-00c896?style=flat-square)](https://antforge-monad.vercel.app/)
-[![Monad Testnet](https://img.shields.io/badge/Monad_Testnet-10143-836EF9?style=flat-square)](https://testnet.monadexplorer.com/address/0x028268f8fF62edc596f931E17E2Fb21015f5b0A2)
-[![Contract](https://img.shields.io/badge/AntColony-Verified-836EF9?style=flat-square)](https://testnet.monadexplorer.com/address/0x028268f8fF62edc596f931E17E2Fb21015f5b0A2)
-[![Solidity](https://img.shields.io/badge/Solidity-0.8.28-363636?style=flat-square&logo=solidity)](contracts/src/AntColony.sol)
-[![React](https://img.shields.io/badge/React-19.2-61DAFB?style=flat-square&logo=react&logoColor=111827)](web/package.json)
-[![Vite](https://img.shields.io/badge/Vite-8.1-646CFF?style=flat-square&logo=vite&logoColor=white)](web/package.json)
-[![License](https://img.shields.io/badge/License-TBD-lightgrey?style=flat-square)](#安全模型与限制)
-
-[公网 Demo](https://antforge-monad.vercel.app/) ·
-[合约 Explorer](https://testnet.monadexplorer.com/address/0x028268f8fF62edc596f931E17E2Fb21015f5b0A2) ·
-[链上证据](docs/04-monad-testnet-evidence.md) ·
-[3 分钟路演](docs/06-roadshow-cue-card.md) ·
-[演示步骤](docs/07-frontend-demo-walkthrough.md)
+[![Explorer](https://img.shields.io/badge/Explorer-AntColony-836EF9?style=flat-square)](https://testnet.monadexplorer.com/address/0x028268f8fF62edc596f931E17E2Fb21015f5b0A2)
+[![Onchain Evidence](https://img.shields.io/badge/Onchain-Evidence-111827?style=flat-square)](docs/04-monad-testnet-evidence.md)
+[![English](https://img.shields.io/badge/English-Current-00c896?style=flat-square)](README.md)
+[![Simplified Chinese](https://img.shields.io/badge/简体中文-README.zh--CN.md-lightgrey?style=flat-square)](README.zh-CN.md)
 
 <br/>
 
 <img
   src="docs/assets/antforge-product-hero.webp"
-  alt="AntForge product vision — Queen Core orchestrates Image, LLM, Guard, Storage and Treasury chambers on Monad"
+  alt="AntForge product vision: Queen Core coordinates Image, LLM, Guard, Storage, and Treasury workshops on Monad"
   width="100%"
 />
 
-<sub>
-产品概念界面：Queen 拆解目标 → 多技能工坊并行执行 → Guard 验证 → 金库按贡献结算。<br/>
-实际可交互 Demo 见上方公网链接；Mock 输出与 Live 结算边界见下文。
-</sub>
+<sub>Product concept: Mission → temporary agent swarm → Guard verification → native MON settlement on Monad.</sub>
 
 </div>
 
 ---
 
-## 目录
+## Product Thesis
 
-- [30 秒看懂项目](#30-秒看懂项目)
-- [为什么选 Monad](#为什么选-monad)
-- [已交付功能](#已交付功能)
-- [Monad 原生机制](#monad-原生机制)
-- [完整协议流程](#完整协议流程)
-- [系统架构](#系统架构)
-- [Monad Testnet 部署与证据](#monad-testnet-部署与证据)
-- [快速开始](#快速开始)
-- [配置参考](#配置参考)
-- [可用命令](#可用命令)
-- [仓库结构](#仓库结构)
-- [安全模型与限制](#安全模型与限制)
-- [完成状态](#完成状态与验证口径)
-- [文档索引](#文档索引)
-- [赛后演进](#赛后演进)
-- [贡献](#贡献)
+Most agent products optimize which single agent to select or call. AntForge addresses the next problem: **when one mission requires several skills, how can a temporary machine workforce form around it while keeping responsibilities, results, and payments verifiable?**
 
----
+AntForge is **not another agent marketplace**. A marketplace focuses on discovery and exchange. AntForge provides a coordination and settlement protocol: it isolates tasks, enforces skill matching, records output commitments, authorizes Guard verification, and escrows and settles native MON on Monad.
 
-## 30 秒看懂项目
+The innovation is not one model or one agent. It is the protocol layer that lets autonomous agents establish a trusted economic relationship for the duration of a mission.
 
-传统 Agent 产品通常把重点放在「选择一个 Agent」。AntForge 处理的是另一类问题：
+## Live Product
 
-> **当一个目标需要多只自治 Agent 分工时，如何在没有中心化调度账本的情况下完成技能匹配、并发执行、结果承诺、验证与按贡献结算？**
-
-用户提交目标并锁定原生 **MON**；Queen 将目标拆成任务级隔离的微任务；具备匹配技能的 Worker 领取并提交结果哈希；Guard 验证后把奖励记入 Worker 的独立余额，Worker 再自行提取 MON。
+The product turns a mission into a complete, observable work loop:
 
 ```text
-Goal + MON escrow
-  → Queen creates isolated taskIds
-  → skill-matched Workers claim and commit outputs
+Mission + MON escrow
+  → Queen plans isolated tasks
+  → skill-matched Workers claim and execute
+  → Workers commit output hashes
   → Guard verifies or rejects
-  → claimableRewards[worker]
-  → Worker withdraws native MON
-  → receipts and state remain verifiable on Explorer
+  → rewards enter claimableRewards[worker]
+  → Workers withdraw native MON
 ```
 
-| 评审问题 | AntForge 的回答 |
-| --- | --- |
-| **解决什么问题？** | 多 Agent 临时组队缺少可验证、可结算的协作协议 |
-| **核心创新？** | Swarm / Conflict 双通道、链上技能位图、确定性任务 ID、Pull 奖励 |
-| **为什么是 Monad？** | Agent 协作天然产生大量彼此独立的微交易，适合低冲突、任务级状态设计与快速事件反馈 |
-| **已完成什么？** | 合约、Foundry 测试、事件驱动 Runner、Mock/Live 前端、Vercel 公网部署、Testnet 全闭环与 Explorer 证据 |
-| **哪些仍是 Mock？** | Queen 规划模板与图片/文本输出；所有 Mock 均在界面和文档中明确标注 |
+The Public Demo uses a simple example: a user submits an old photograph, and Queen creates three tasks — **Repair, Color, and Story**. Specialist Workers restore the image, colorize it, and write a commemorative story before Guard verification. This is an accessible protocol demonstration, not the boundary of the product. The core capability is verifiable coordination and settlement for any temporary mix of skills a mission requires.
 
-### 真实性一句话
+[Open the Public Demo](https://antforge-monad.vercel.app/) · [Follow the frontend demo walkthrough](docs/07-frontend-demo-walkthrough.md)
 
-> 公网 Demo 默认 **Live Settlement**：读取 Monad Testnet 真实合约与事件，连接钱包可创建 Colony。Agent 的图片/文本输出是明确标注的 deterministic mock；**链上身份、托管、状态、回执与 MON 结算是真实测试网行为**。
+## Why AntForge / Why Monad
 
----
+Agent collaboration produces many task-level state updates and micro-settlements. AntForge isolates writes across independent tasks while modeling exclusive competition for the same task as an explicit conflict. This is a **parallel-friendly state design for Monad**, not an unmeasured performance claim.
 
-## 为什么选 Monad
-
-不要把「更快、更便宜」当成唯一叙事。AntForge 展示的是：
-
-| 设计点 | 与 Monad 的契合 |
-| --- | --- |
-| 大量彼此独立的 Agent 微任务 | 并行执行友好的任务级状态隔离 |
-| 低冲突状态结构 | `mapping(taskId => Task)` + 独立 `claimableRewards` |
-| 高频状态更新与微结算 | 快速确认 → 前端实时蚁群体验 |
-| Swarm vs Conflict | 用可验证交易对照「并行友好」与「有意冲突」 |
-
-延迟指标表示广播到一确认回执的 **inclusion latency**，不等同于 finality。本文不声称未经测试的 TPS 数字。
-
----
-
-## 已交付功能
-
-### 智能合约 · `AntColony.sol`
-
-- Agent 注册、资料哈希与技能位图
-- 单个 Colony 最多 `8` 个独立任务，奖励总和精确托管
-- Requester 命名空间下的确定性 `taskId`，无需全局自增计数器
-- 状态机：`Open → Claimed → Submitted → Settled`
-- Guard 拒绝退款、Requester 超时取消退款
-- `claimableRewards` Pull 结算 + Worker 原生 MON 提款
-- 技能 / Worker / Verifier / Requester 权限检查
-- OpenZeppelin `ReentrancyGuard` 保护资金路径
-- 禁止绕过 Colony 流程直接向合约打款
-
-### Agent Runtime · `agents/`
-
-- Repair、Color、Story、Guard、Rogue 使用独立测试网钱包
-- 持久监听 `TaskCreated`，自动领取、提交、验证、结算和提款
-- 重启后从链上状态恢复 `Open / Claimed / Submitted / Settled`
-- 按 Worker 串行、跨 Worker 并行；Guard 使用独立队列
-- 广播前持久化 nonce、原始签名交易和预计算哈希
-- 模糊 RPC 响应时做回执协调或同原始交易重播，避免双花业务交易
-- Monad 公共 RPC 日志按 `100` 区块分页，有界并发回放
-
-### Web App · `web/`
-
-- 同一套领域模型与组件支持 `mock` / `live`
-- 生产默认 **Live Settlement**，开发默认 Mock（除非显式配置）
-- 注入式钱包、Monad Testnet 检查、`createColony` 写入
-- 从合约事件重建 Colony、任务、Agent、预算和状态
-- 蚁穴拓扑、任务工坊、工作流、Proof Lanes、事件流与 Explorer 链接
-- 清晰展示：Mock/Live、Runner 状态、交易哈希、区块、Gas Limit、inclusion latency
-- Live 失败展示真实错误，**不静默回退**到 Mock
-
----
-
-## Monad 原生机制
-
-| 机制 | 实现 | 可验证结果 |
+| Mechanism | Protocol design | Why it matters |
 | --- | --- | --- |
-| **Swarm Lane** | `mapping(bytes32 taskId => Task)`；不同 Worker 写不同任务槽 | 多任务可独立领取、提交与结算；避免共享全局任务计数器 |
-| **Conflict Lane** | 同一 `taskId` 的 `Open` 是排他资源 | 第一位 Worker 成功，第二笔以 `TaskNotOpen` 回滚 |
-| **Skill Guard** | `agents[worker].skills & task.requiredSkill` | Rogue Ant 广播前模拟即得 `SkillMismatch` |
-| **Pull Settlement** | `claimableRewards[worker]` + `withdrawReward()` | Guard 只记账，Worker 独立提款 |
-| **Pheromone Events** | Colony / Task / Result / Reward 全流程事件 | 前端与 Runner 可日志回放 + 增量轮询恢复 |
-| **Deterministic IDs** | `keccak256(requester, colonyId, index, inputHash)` | 任务由上下文唯一派生，不依赖 `nextTaskId++` |
+| **Swarm Lane** | `mapping(bytes32 taskId => Task)`; different Workers write to different task slots | Independent tasks can be claimed, submitted, and settled separately, reducing unnecessary shared-state contention |
+| **Conflict Lane** | The `Open` state of one `taskId` is an exclusive resource | The first Worker wins the task; a competing transaction verifiably reverts |
+| **Skill Guard** | `agents[worker].skills & task.requiredSkill` | The contract enforces skill eligibility instead of relying only on the UI or scheduler |
+| **Deterministic IDs** | `keccak256(requester, colonyId, index, inputHash)` | Task IDs derive from context without a shared `nextTaskId++` counter |
+| **Pull Settlement** | `claimableRewards[worker]` + `withdrawReward()` | Guard records the reward; each Worker independently withdraws native MON |
+| **Pheromone Events** | Events cover the Colony, Task, Result, and Reward lifecycle | The frontend and Runner can recover state through log replay and incremental polling |
 
-「并行友好」描述的是 **状态结构设计**，不是未经测试的并行性能结论。
+AntForge does not publish TPS or finality figures without supporting measurements, and it does not present “fast feedback” as proof of finality.
 
----
+## Verifiable Onchain Proof
 
-## 完整协议流程
+Onchain evidence is part of AntForge's trust model, not product decoration. The values below come from the repository deployment record and Monad Testnet Explorer.
 
-```mermaid
-sequenceDiagram
-    participant U as Requester / Queen
-    participant C as AntColony
-    participant W as Worker
-    participant G as Guard
-
-    W->>C: registerAgent(skills, metadataHash)
-    G->>C: registerAgent(SKILL_VERIFY, metadataHash)
-    U->>C: createColony{value: Σ rewards}(colonyId, tasks, guard)
-    C-->>W: TaskCreated
-    W->>C: claimTask(taskId)
-    W->>W: deterministic off-chain execution
-    W->>C: submitResult(taskId, outputHash, outputURI)
-    G->>C: verifyResult(taskId)
-    C->>C: claimableRewards[worker] += reward
-    W->>C: withdrawReward()
-    C-->>W: native MON
-```
-
-失败与退款路径：
-
-```text
-Submitted --rejectAndRefund--> Rejected  --MON--> Requester
-Expired Open / Claimed / Submitted --cancelExpiredTask--> Cancelled --MON--> Requester
-```
-
----
-
-## 系统架构
-
-```text
-┌────────────────────────────────────────────────────────────────┐
-│ web/  React 19 + Vite 8 + TypeScript + wagmi + viem           │
-│       MockColonyDataSource  │  MonadColonyDataSource           │
-│       wallet writes · event replay · colony dashboard          │
-└──────────────────────────────┬─────────────────────────────────┘
-                               │ public RPC + Requester wallet
-┌──────────────────────────────▼─────────────────────────────────┐
-│ AntColony.sol · Monad Testnet 10143                            │
-│ agents · tasks · colonyRequesters · claimableRewards           │
-│ escrow · permissions · state machine · events · native MON     │
-└──────────────────────────────┬─────────────────────────────────┘
-                               │ events + local-only role keys
-┌──────────────────────────────▼─────────────────────────────────┐
-│ agents/  Node.js + TypeScript + viem                           │
-│ Repair · Color · Story · Guard · Rogue                         │
-│ backfill · polling · recovery journal · reconciliation         │
-└────────────────────────────────────────────────────────────────┘
-```
-
-| 层 | 技术 | 职责 |
-| --- | --- | --- |
-| Contract | Solidity `0.8.28`、Monad Foundry、OpenZeppelin | 身份、技能、托管、状态机、退款与结算 |
-| Runtime | Node.js `20+`、TypeScript、viem | 多钱包事件驱动执行与可靠交易广播 |
-| Frontend | React `19.2`、Vite `8.1`、Tailwind CSS `4.3`、wagmi `3.7`、viem `2.55` | 双模式看板、钱包操作与链上证据 |
-| Network | Monad Testnet，Chain ID `10143` | 合约字节码、事件、回执与原生 MON |
-| Hosting | Vercel | 静态 Web App；**不托管** Agent 私钥或 Runner |
-
-### Mock / Live 真实性边界
-
-| 能力 | Mock | Live |
-| --- | --- | --- |
-| UI、领域模型、任务状态机 | 共用 | 共用 |
-| Queen 三任务规划 | 确定性模板 | 确定性模板 |
-| 图片 / 文本输出 | 确定性 Mock | 确定性 Mock |
-| 钱包签名与交易 | 浏览器模拟 | **真实 Testnet** |
-| 托管、奖励与 MON | 模拟并明确标注 | **真实 Testnet** |
-| 哈希、区块与 Explorer | 不伪造 | 来自 RPC、回执与日志 |
-| 错误处理 | 可控演示 | 展示真实错误，禁止静默回退 |
-
----
-
-## Monad Testnet 部署与证据
-
-| 项目 | 已验证值 |
+| Item | Verifiable value |
 | --- | --- |
-| 网络 | Monad Testnet · Chain ID `10143` |
-| 合约 | [`0x028268f8fF62edc596f931E17E2Fb21015f5b0A2`](https://testnet.monadexplorer.com/address/0x028268f8fF62edc596f931E17E2Fb21015f5b0A2) |
-| 部署交易 | [`0xf0567983…f941a00c`](https://testnet.monadexplorer.com/tx/0xf0567983d07c3a5811d603612defb71b188856b44db840b895e164e4f941a00c) |
-| 部署区块 | `47924433` |
+| Network | Monad Testnet · Chain ID `10143` |
+| Contract | [`0x028268f8fF62edc596f931E17E2Fb21015f5b0A2`](https://testnet.monadexplorer.com/address/0x028268f8fF62edc596f931E17E2Fb21015f5b0A2) |
+| Deployment transaction | [`0xf0567983d07c3a5811d603612defb71b188856b44db840b895e164e4f941a00c`](https://testnet.monadexplorer.com/tx/0xf0567983d07c3a5811d603612defb71b188856b44db840b895e164e4f941a00c) |
+| Deployment block | `47924433` |
 | Runtime code | `5388` bytes |
-| 源码验证 | MonadVision Sourcify `exact_match` |
-| Public Demo | [https://antforge-monad.vercel.app/](https://antforge-monad.vercel.app/)（默认 Live Settlement） |
+| Source verification | MonadVision Sourcify `exact_match` |
+| Public Demo | [https://antforge-monad.vercel.app/](https://antforge-monad.vercel.app/) (defaults to Live Settlement) |
+| Machine-readable record | [`deployments/monad-testnet.json`](deployments/monad-testnet.json) |
 
-机器可读记录：[`deployments/monad-testnet.json`](deployments/monad-testnet.json)
+### Repair Worker: a five-transaction vertical slice
 
-完整证据说明：[`docs/04-monad-testnet-evidence.md`](docs/04-monad-testnet-evidence.md)
-
-### 主闭环交易（Repair Worker 纵向切片）
-
-| 步骤 | 交易 | 回执 |
+| Step | Transaction | Receipt |
 | --- | --- | --- |
-| 创建 Colony，托管三份 `0.001 MON` | [`0xd7b5690c…40574763`](https://testnet.monadexplorer.com/tx/0xd7b5690c0781520d8750d50aac3b6733735a98a7f091bac1232669f940574763) | Success |
-| Repair 领取任务 | [`0xf0c11cff…9c57f9a`](https://testnet.monadexplorer.com/tx/0xf0c11cffbb2ea79b713d7b1fb6bd757361fa1622a4ba2ebe363a0b2c29c57f9a) | Success |
-| 提交结果承诺 | [`0x2687798b…730f433c`](https://testnet.monadexplorer.com/tx/0x2687798b5e875ccf3abc26cb1469d4fb1d798e7e39a3ccbb14158697730f433c) | Success |
-| Guard 验证并记账 | [`0xc6c8d640…dc42987e`](https://testnet.monadexplorer.com/tx/0xc6c8d6401ed2e6374660b5e6d1235cd441536cbe17dbacdaa8c5b671dc42987e) | Success |
-| Worker 提取 MON | [`0xba439f5f…fb0da2c7`](https://testnet.monadexplorer.com/tx/0xba439f5fa3eb5b76283ae5c88eaa91779ac89bb4c6338fd482008f25fb0da2c7) | Success |
+| Create a Colony and escrow three `0.001 MON` rewards | [`0xd7b5690c0781520d8750d50aac3b6733735a98a7f091bac1232669f940574763`](https://testnet.monadexplorer.com/tx/0xd7b5690c0781520d8750d50aac3b6733735a98a7f091bac1232669f940574763) | Success |
+| Repair Worker claims the task | [`0xf0c11cffbb2ea79b713d7b1fb6bd757361fa1622a4ba2ebe363a0b2c29c57f9a`](https://testnet.monadexplorer.com/tx/0xf0c11cffbb2ea79b713d7b1fb6bd757361fa1622a4ba2ebe363a0b2c29c57f9a) | Success |
+| Worker submits the output commitment | [`0x2687798b5e875ccf3abc26cb1469d4fb1d798e7e39a3ccbb14158697730f433c`](https://testnet.monadexplorer.com/tx/0x2687798b5e875ccf3abc26cb1469d4fb1d798e7e39a3ccbb14158697730f433c) | Success |
+| Guard verifies and records the reward | [`0xc6c8d6401ed2e6374660b5e6d1235cd441536cbe17dbacdaa8c5b671dc42987e`](https://testnet.monadexplorer.com/tx/0xc6c8d6401ed2e6374660b5e6d1235cd441536cbe17dbacdaa8c5b671dc42987e) | Success |
+| Worker withdraws native MON | [`0xba439f5fa3eb5b76283ae5c88eaa91779ac89bb4c6338fd482008f25fb0da2c7`](https://testnet.monadexplorer.com/tx/0xba439f5fa3eb5b76283ae5c88eaa91779ac89bb4c6338fd482008f25fb0da2c7) | Success |
 
-结算后 RPC 回读：任务 `Settled`、Worker `claimableRewards = 0`、合约余额 `0`。
+The recorded post-settlement reads show the task as `Settled`, the Worker's `claimableRewards = 0`, and the contract balance at `0`.
 
-### 失败路径证据
+### Verifiable failure paths
 
-- **Conflict Lane：** [赢家领取成功](https://testnet.monadexplorer.com/tx/0x1d632ec74a9e8e61748bf7912d2744ab72e128f53e9219ccc77fbe5f8c3743d1) · [竞争方回滚](https://testnet.monadexplorer.com/tx/0x5c8f5070a5db880178220027a4eeb6d3f6e725be2888cae745996643cb9b4061)（`TaskNotOpen`）
-- **Skill Guard：** Rogue Ant 广播前模拟得到 `SkillMismatch`，**无交易哈希**（不为未广播操作伪造证据）
+- **Conflict Lane:**
+  - The [winning claim transaction](https://testnet.monadexplorer.com/tx/0x1d632ec74a9e8e61748bf7912d2744ab72e128f53e9219ccc77fbe5f8c3743d1) succeeds.
+  - The [competing transaction](https://testnet.monadexplorer.com/tx/0x5c8f5070a5db880178220027a4eeb6d3f6e725be2888cae745996643cb9b4061) reverts with `TaskNotOpen`.
+- **Rogue Ant / Skill Guard:** pre-broadcast simulation returns `SkillMismatch`, so the operation is **not broadcast and has no transaction hash**. AntForge does not manufacture evidence for a transaction that never happened.
 
----
+See [`docs/04-monad-testnet-evidence.md`](docs/04-monad-testnet-evidence.md) for complete receipts, role addresses, and browser verification records.
 
-## 快速开始
+## What Is Real
 
-### 环境要求
+| Layer | Current boundary |
+| --- | --- |
+| **Live** | Agent identities and skills on Monad Testnet; Requester, Worker, and Guard wallet signatures; MON escrow; task state; output hashes; events; reward accounting; refunds; and Worker withdrawals. Live mode reads real RPC data, logs, and receipts. Failures surface as real errors and **never silently fall back** to Mock. |
+| **Deterministic Mock** | Queen's three-task plan and the Repair, Color, and Story image/text outputs. They are repeatable and clearly labeled for a stable demonstration; they do not represent real LLM, image-model, or tool execution. |
+| **Future** | Real model and tool execution, result storage and availability proofs, multiple Guards, staking and challenge/dispute mechanisms, an open skill network, and portable agent reputation. These directions have not been delivered. |
 
-- Node.js `20+` 与 npm
-- [Monad Foundry](https://docs.monad.xyz/developer-essentials/developer-tools/foundry)（本项目验证版本 `1.7.1-monad-v1.0.0`）
-- Live 模式：MetaMask / Rabby 等注入式钱包 + 少量 Testnet MON
-- 部署 / Runner：**专用测试网钱包**，不得使用主网私钥
+## Architecture
 
-### 克隆与全量校验
+```text
+┌──────────────────────────────────────────────────────────────┐
+│ web/ · React 19 + Vite 8 + TypeScript + wagmi + viem        │
+│ MockColonyDataSource │ MonadColonyDataSource                 │
+│ mission UI · wallet writes · event replay · Explorer links   │
+└────────────────────────────┬─────────────────────────────────┘
+                             │ public RPC + Requester wallet
+┌────────────────────────────▼─────────────────────────────────┐
+│ AntColony.sol · Monad Testnet 10143                          │
+│ agents · tasks · escrow · permissions · refunds · MON        │
+└────────────────────────────┬─────────────────────────────────┘
+                             │ events + local-only role keys
+┌────────────────────────────▼─────────────────────────────────┐
+│ agents/ · Node.js + TypeScript + viem                        │
+│ Repair · Color · Story · Guard · Rogue                       │
+│ backfill · polling · recovery journal · reconciliation       │
+└──────────────────────────────────────────────────────────────┘
+```
+
+| Layer | Technology | Responsibility |
+| --- | --- | --- |
+| Contract | Solidity `0.8.28`, Monad Foundry, OpenZeppelin | Identity, skills, exact escrow, state machine, permissions, refunds, and native MON settlement |
+| Agent Runtime | Node.js `20+`, TypeScript, viem `2.55` | Independent role wallets, event-driven execution, log replay, and reliable transaction broadcasting |
+| Web App | React `19.2`, Vite `8.1`, Tailwind CSS `4.3`, wagmi `3.7`, viem `2.55` | Shared Mock/Live interface, Requester wallet actions, and onchain evidence |
+| Hosting | Vercel | Static Web App only; it **does not host** Agent private keys or the Runner |
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js `20+` and npm
+- [Monad Foundry](https://docs.monad.xyz/tooling-and-infra/toolkits/monad-foundry); this project was verified with `1.7.1-monad-v1.0.0`
+- For Live mode: an injected wallet such as MetaMask or Rabby, plus a small amount of Testnet MON
+- For deployment and the Runner: dedicated testnet wallets only; never use a mainnet private key
+
+### Clone and run the full verification suite
 
 ```bash
 git clone https://github.com/NeoWeb3Nova/monad-agent-ant-workshop.git
@@ -287,20 +160,23 @@ cd agents && npm ci && npm run typecheck && npm run build && cd ..
 cd web && npm ci && npm run lint && npm run build && cd ..
 ```
 
-### Web · Mock 模式（离线演示）
+### Web: Mock mode
+
+Vite uses `web/` as its environment directory. A fresh clone should create `web/.env`:
 
 ```bash
 cd web
-cp .env.example .env   # 保持 VITE_DATA_MODE=mock
+cp .env.example .env
+# Keep VITE_DATA_MODE=mock
 npm ci
 npm run dev
 ```
 
-访问 `http://localhost:5173`，点击 **Release the swarm** 可离线演示完整视觉状态机。Mock **不生成**伪造的交易哈希或区块号。
+Open `http://localhost:5173` and select **Release the swarm** to play the complete visual state machine. Mock mode does not invent transaction hashes, block numbers, or balances.
 
-### Web · Live Settlement
+### Web: Live Settlement
 
-编辑 `web/.env`：
+Edit `web/.env`:
 
 ```dotenv
 VITE_DATA_MODE=live
@@ -313,31 +189,38 @@ VITE_DEPLOYMENT_BLOCK=47924433
 ```
 
 ```bash
-cd web && npm run dev
+cd web
+npm run dev
 ```
 
-连接钱包并切换到 Monad Testnet 后，**Create live colony** 会调用 `createColony`，创建三个任务并托管 `0.003 MON`。本地 Runner 在线时会继续处理任务。
+After connecting a wallet and switching to Monad Testnet, **Create live colony** calls `createColony`, creates three tasks, and escrows `0.003 MON`. If the local Runner is online, it continues processing the tasks.
+
+The public Vercel build uses the tracked public defaults in `web/.env.production` and currently defaults to `live`. Every `VITE_*` value is embedded in the browser build.
 
 ### Agent Runner
 
+The Runner loads the repository-root `.env` first, then overlays `agents/.env`; process-level environment variables have the highest precedence.
+
 ```bash
 cp .env.example .env
-# 填写 ANT_COLONY_ADDRESS、RUNNER_FROM_BLOCK 和六个测试网角色私钥
+# Set ANT_COLONY_ADDRESS, RUNNER_FROM_BLOCK, and six testnet role private keys
 cd agents
-npm ci && npm run typecheck && npm run build
+npm ci
+npm run typecheck
+npm run build
 
-npm run agents:mock  # 一次性 Swarm / Skill Guard / Conflict / Settlement 演示
-npm run agents:live  # 持久监听并自动处理 TaskCreated
+npm run agents:mock  # One-shot Swarm / Skill Guard / Conflict / Settlement demo
+npm run agents:live  # Persistent TaskCreated listener and automatic task processing
 ```
 
-Runner 默认读仓库根目录 `.env`，可用 `agents/.env` 覆盖。`.runtime/` 保存恢复游标和交易 journal（已 Git 忽略）。
+`.runtime/` stores recovery cursors and the transaction journal and is ignored by Git.
 
-### 合约部署
+### Foundry deployment
 
 ```bash
 cd contracts
 cp .env.example .env
-# 填写 MONAD_RPC_URL 与仅用于 Testnet 的 DEPLOYER_PRIVATE_KEY
+# Set MONAD_RPC_URL and a Testnet-only DEPLOYER_PRIVATE_KEY
 source .env
 
 DEPLOYER=$(cast wallet address --private-key "$DEPLOYER_PRIVATE_KEY")
@@ -349,172 +232,146 @@ forge script script/DeployAntColony.s.sol:DeployAntColony \
   -vvvv
 ```
 
-脚本输出地址 **不等于** 部署证明。记录前必须：
+An address printed by the script is not deployment proof. Read the bytecode after deployment and verify the transaction receipt through Explorer or RPC:
 
 ```bash
 cast code <address> --rpc-url "$MONAD_RPC_URL"
-# 并用 Explorer 回读验证
 ```
 
----
+## Configuration
 
-## 配置参考
+### Public Web variables
 
-### Web 公共变量
-
-| 变量 | Mock | Live | 说明 |
+| Variable | Mock | Live | Description |
 | --- | --- | --- | --- |
-| `VITE_DATA_MODE` | 可选 | 可选 | `mock` / `live`；生产默认 live，开发默认 mock |
-| `VITE_MONAD_RPC_URL` | — | 必需 | 浏览器可访问的 Monad Testnet RPC |
-| `VITE_CHAIN_ID` | — | 必需 | `10143` |
-| `VITE_ANT_COLONY_ADDRESS` | — | 必需 | 已部署 `AntColony` |
-| `VITE_GUARD_ADDRESS` | — | 必需 | 已注册且持有 `VERIFY` 技能的 Guard |
-| `VITE_EXPLORER_URL` | — | 必需 | Explorer 基础 URL |
-| `VITE_DEPLOYMENT_BLOCK` | — | 必需 | 日志回放起始区块（正整数） |
+| `VITE_DATA_MODE` | Optional | Optional | `mock` / `live`; development defaults to Mock, while the tracked production configuration is Live |
+| `VITE_MONAD_RPC_URL` | — | Optional | Browser-accessible Monad Testnet RPC; defaults to `https://testnet-rpc.monad.xyz` |
+| `VITE_CHAIN_ID` | — | Optional | Defaults to `10143` |
+| `VITE_ANT_COLONY_ADDRESS` | — | Required | Deployed `AntColony` address |
+| `VITE_GUARD_ADDRESS` | — | Required | A registered Guard with the `VERIFY` skill |
+| `VITE_EXPLORER_URL` | — | Optional | Explorer base URL; defaults to `https://testnet.monadexplorer.com` |
+| `VITE_DEPLOYMENT_BLOCK` | — | Required | Positive log-replay start block |
 
-`VITE_*` 会进入浏览器构建产物，**绝不能**放入私钥、助记词或 API Secret。
+Local Vite reads these values from `web/.env`; fresh clones should copy `web/.env.example`. Vercel uses the tracked public defaults in `web/.env.production`. **Never** place a private key, seed phrase, API secret, or any other secret in a `VITE_*` variable.
 
-### Agent 私有变量
+### Private Agent Runtime variables
 
-| 变量 | 必需 | 说明 |
+| Variable | Required | Description |
 | --- | --- | --- |
-| `ANT_COLONY_ADDRESS` | 是 | Runner 操作的合约地址 |
-| `MONAD_RPC_URL` | 是 | Monad RPC |
-| `RUNNER_FROM_BLOCK` | 建议 | 首次回放起点 |
-| `POLLING_INTERVAL_MS` | 否 | 默认 `800` |
-| `TASK_REWARD_MON` | Mock CLI | 单任务奖励，默认 `0.001` |
-| `AGENT_EXECUTION_MODE` | 是 | 当前仅支持 `mock` 输出 |
-| `REQUESTER_PRIVATE_KEY` | 是 | Requester 测试网钱包 |
-| `REPAIR_AGENT_PRIVATE_KEY` | 是 | Repair Worker |
-| `COLOR_AGENT_PRIVATE_KEY` | 是 | Color Worker |
-| `STORY_AGENT_PRIVATE_KEY` | 是 | Story Worker |
-| `GUARD_AGENT_PRIVATE_KEY` | 是 | Guard |
-| `ROGUE_AGENT_PRIVATE_KEY` | 是 | 失败路径演示钱包 |
+| `ANT_COLONY_ADDRESS` | Yes | Contract operated by the Runner |
+| `MONAD_RPC_URL` | No | Monad Testnet RPC; defaults to `https://testnet-rpc.monad.xyz` |
+| `MONAD_CHAIN_ID` | No | Defaults to `10143` |
+| `MONAD_CHAIN_NAME` | No | Defaults to `Monad Testnet` |
+| `MONAD_EXPLORER_URL` | No | Defaults to Monad Testnet Explorer |
+| `RUNNER_FROM_BLOCK` | Recommended | Initial log-replay block; the deployment block is `47924433` |
+| `POLLING_INTERVAL_MS` | No | Defaults to `800` |
+| `TASK_REWARD_MON` | Mock CLI | Per-task reward; defaults to `0.001` |
+| `AGENT_EXECUTION_MODE` | No | Defaults to `mock`; the MVP currently implements only `mock` output |
+| `REQUESTER_PRIVATE_KEY` | Yes | Requester testnet wallet |
+| `REPAIR_AGENT_PRIVATE_KEY` | Yes | Repair Worker testnet wallet |
+| `COLOR_AGENT_PRIVATE_KEY` | Yes | Color Worker testnet wallet |
+| `STORY_AGENT_PRIVATE_KEY` | Yes | Story Worker testnet wallet |
+| `GUARD_AGENT_PRIVATE_KEY` | Yes | Guard testnet wallet |
+| `ROGUE_AGENT_PRIVATE_KEY` | Yes | Wallet used to demonstrate the failure path |
 
----
+Contract deployment needs only `MONAD_RPC_URL` and `DEPLOYER_PRIVATE_KEY`; see [`contracts/.env.example`](contracts/.env.example).
 
-## 可用命令
+## Security and Limitations
 
-| 目录 | 命令 | 作用 |
-| --- | --- | --- |
-| `contracts/` | `forge fmt --check` | 检查 Solidity 格式 |
-| `contracts/` | `forge build --sizes` | 编译并报告合约大小 |
-| `contracts/` | `forge test -vv` | 核心状态机、权限与资金测试 |
-| `agents/` | `npm run agents:mock` | 一次性真实链上演示 |
-| `agents/` | `npm run agents:live` | 启动事件驱动 Runner |
-| `agents/` | `npm run typecheck` / `npm run build` | 类型检查 / 生成 `dist/` |
-| `web/` | `npm run dev` | Vite 开发服务器 |
-| `web/` | `npm run lint` | oxlint |
-| `web/` | `npm run build` | 类型检查 + 生产构建 |
-| `web/` | `npm run preview` | 本地预览生产构建 |
+### Implemented security boundaries
 
----
+- **Exact escrow:** when a Colony is created, `msg.value` must equal the sum of all task rewards. The contract rejects direct transfers that bypass the workflow.
+- **Skill and role authorization**:
+  - Only active, skill-matched Workers may claim; only the assigned Worker may submit.
+  - At Colony creation, `createColony` checks that the designated Guard is active and has the `VERIFY` skill.
+  - Later, `verifyResult` and `rejectAndRefund` check only that `msg.sender` is the task's designated verifier address.
+  - Only the Requester may cancel an expired task.
+- **Pull payments:** Guard credits `claimableRewards`; Workers withdraw for themselves instead of receiving an arbitrary push payment during verification.
+- **Refund paths:** a Guard rejection of a submitted result, or Requester cancellation of an expired unsettled task, returns that task's reward to the Requester.
+- **Reentrancy protection:** fund flows update state before external calls and use OpenZeppelin `ReentrancyGuard`.
+- **Private-key isolation:** Agent and deployment keys belong only in uncommitted local environment files. The static Vercel frontend holds none of them.
 
-## 仓库结构
+### Current limitations
 
-```text
-.
-├── contracts/          AntColony.sol、Foundry 测试、部署脚本与子模块
-├── agents/             多钱包事件驱动 Runner、CLI Demo 与交易 journal
-├── web/                React/Vite Mock + Live 单页应用
-├── deployments/        机器可读 Monad Testnet 部署与交易证据
-├── docs/               选题、规则、工具链、链上证据与路演稿
-│   └── assets/         产品概念图等静态资源
-├── AGENTS.md           项目范围、真实性与交付约束
-└── README.md           项目入口
-```
+- This hackathon prototype runs on Monad Testnet and is **not audited**; it must not hold mainnet assets.
+- Queen planning and Worker image/text output remain deterministic mocks. The current deterministic Guard compares the expected output hash and checks task state plus Worker/verifier associations; it does not validate content format, URI/file availability, or semantic quality.
+- Each Colony currently uses one designated Guard. There is no multi-Guard consensus, staking, challenge period, or dispute arbitration.
+- The Runner is hosted in the local demo environment, not a decentralized execution network.
+- The performance boundary is described above; the project makes no claim about economic-attack resilience or mainnet security.
+- The repository root has no project-level `LICENSE`, `LICENSE.md`, or `COPYING`. SPDX identifiers in individual source files do not declare a license for the project as a whole.
 
-子系统文档：[Contracts](contracts/README.md) · [Agent Runtime](agents/README.md) · [Web App](web/README.md)
+## Built by Neo.Yun
 
----
+<table>
+<tr>
+<td width="108" valign="top">
+<img src="https://avatars.githubusercontent.com/u/221855057?v=4" alt="Neo.Yun" width="88">
+</td>
+<td valign="top">
 
-## 安全模型与限制
+**AI × Web3 Builder · Protocol Designer**
 
-### 已实现的保护
+Neo.Yun builds working, verifiable, and reproducible systems from first principles. AntForge follows the same discipline: define the trust boundary first, then prove it with a working system and concrete evidence.
 
-- 托管金额必须与所有任务奖励精确相等
-- Verifier 必须是活跃且拥有 `VERIFY` 技能的 Agent
-- 只有匹配技能的活跃 Agent 可以领取任务
-- 只有已分配 Worker 可提交，只有指定 Guard 可验证或拒绝
-- 每个任务只能进入一次结算终态
-- 拒绝和超时均有 Requester 退款路径
-- 提款前清零记账 + `ReentrancyGuard`
-- Runner 要求六个角色地址互不相同
-- 私钥仅存在于未提交的本地环境文件
+</td>
+</tr>
+</table>
 
-### 当前边界
+The projects below demonstrate the builder's delivery experience; they are neither AntForge modules nor partners:
 
-- **未经审计的 Testnet 黑客松原型**，不应承载主网资产
-- Queen 规划与 Agent 输出为 deterministic mock，尚未接入真实 LLM / 图像模型
-- Guard 验证确定性输出、哈希、权限和任务关联，**不**在链上评价图片/文本语义质量
-- 当前为单指定 Guard，不含质押、多验证者共识或争议仲裁
-- Runner 由演示电脑本地托管；公网 Vercel 只部署无私钥的静态前端
-- 未进行 TPS、finality、经济攻击或主网安全审计
-- 仓库根目录尚未提供项目级 `LICENSE`，许可条款待维护者正式声明
+- **[OPC Agent Treasury](https://github.com/NeoWeb3Nova/opc-agent-treasury)** — third place in the AI × Web3 School Agentic Hackathon track; [official announcement](https://x.com/aiweb3school/status/2069726882988441643).
+- **[Monad Builder Camp](https://github.com/NeoWeb3Nova/Web3SummerInternshipProgram-MonadBuilderCamp) / [MOSS](https://github.com/NeoWeb3Nova/moss)** — learning, building, and open-source contribution work in the Monad ecosystem.
+- **[NeoDeFi](https://github.com/NeoWeb3Nova/NeoDeFi)** — onchain asset-management protocol and end-to-end product delivery.
+- **MotionSeal** — protocol-design exploration for proof-of-movement commitments on Monad.
 
----
+[GitHub](https://github.com/NeoWeb3Nova) · [Website](https://amshe.fun) · [X](https://x.com/NeoWeb3Nova) · [Telegram](https://t.me/neo_web3_nova)
 
-## 完成状态与验证口径
+## From MVP to Agent Economy
 
-| 交付项 | 状态 | 证据 |
-| --- | --- | --- |
-| Contract build / tests | 已完成 | `contracts/src`、`contracts/test` |
-| Agent Runtime typecheck / build | 已完成 | `agents/src`、`agents/package.json` |
-| Web lint / production build | 已完成 | `web/src`、`web/package.json` |
-| Monad Testnet 部署 | 已完成 | 合约地址、部署交易、RPC bytecode |
-| 注册 → 托管 → 领取 → 提交 → 验证 → 提款 | 已完成 | Explorer 主闭环交易表 |
-| Skill Guard / Conflict Lane | 已完成 | 模拟错误与失败回执 |
-| Public Demo | 已完成 | Vercel，默认 Live Settlement |
-| 源码验证 | 已完成 | MonadVision Sourcify `exact_match` |
-| 独立安全审计 | 未进行 | 主网前必需 |
-| 黑客松平台提交 / 视频上传 | 需人工确认 | 外部账号操作不由仓库证明 |
-
-只把仓库、RPC、Explorer 或公开页面可以核验的事项标为已完成；不把 Mock 输出或未广播模拟描述成真实链上结果。
-
----
-
-## 文档索引
-
-| 文档 | 内容 |
+| Stage | Direction |
 | --- | --- |
-| [AGENTS.md](AGENTS.md) | 产品优先级、Mock/Live 规则、Monad 约束与完成标准 |
-| [docs/01-project-ideation.md](docs/01-project-ideation.md) | 项目创意与机制基线 |
-| [docs/02-hackathon-rules.md](docs/02-hackathon-rules.md) | Monad Blitz 赛制记录 |
-| [docs/03-monad-tooling.md](docs/03-monad-tooling.md) | Monad 开发工具链 |
-| [docs/04-monad-testnet-evidence.md](docs/04-monad-testnet-evidence.md) | 部署、交易、回读与浏览器验证证据 |
-| [docs/05-pitch-script.md](docs/05-pitch-script.md) | 完整路演策略、问答与故障预案 |
-| [docs/06-roadshow-cue-card.md](docs/06-roadshow-cue-card.md) | 3 分钟口播与现场提词卡 |
-| [docs/07-frontend-demo-walkthrough.md](docs/07-frontend-demo-walkthrough.md) | 钱包连接、交易确认、Runner 与 Explorer 核验步骤 |
-| [docs/08-antforge-3min-roadshow.html](docs/08-antforge-3min-roadshow.html) | 3 分钟路演 HTML 页 |
-| [docs/09-antforge-ant-colony-roadshow.html](docs/09-antforge-ant-colony-roadshow.html) | 蚁穴可视化路演页 |
-| [docs/assets/antforge-product-hero.webp](docs/assets/antforge-product-hero.webp) | 产品概念主视觉 |
+| **Today** | A reproducible Monad Testnet MVP for agent collaboration and native MON settlement: task isolation, skill constraints, Guard verification, refunds, Pull Settlement, Runner, and Public Demo. |
+| **Next** | Integrate real model and tool execution, result storage, and availability proofs; explore more Guards, challenge mechanisms, and stronger execution reliability. |
+| **Vision** | Build an open **Agent Swarm Execution Network** where agents discover work, prove skills, form temporary teams, and accumulate portable reputation across missions. |
 
----
+`Next` and `Vision` describe future work. They are not shipped features or a commitment to a mainnet launch.
 
-## 赛后演进
+## Build With Us
 
-1. 将 deterministic Worker 替换为可验证的真实模型 / 工具执行
-2. 引入结果存储与内容可用性证明
-3. 增加多 Guard、质押、挑战期与争议仲裁
-4. 形成可复用的技能目录、执行信誉与任务模板
-5. 在审计与经济模型验证后评估主网部署
+AntForge is looking for collaborators who can help move the protocol from a verifiable MVP into real workflows:
 
----
+| Partner category | What we can build together |
+| --- | --- |
+| **Agent frameworks** | Map framework-native agent capabilities to onchain skills, task claims, output commitments, and settlement adapters |
+| **Verification / storage providers** | Result availability, content addressing, verifiable execution, proof aggregation, and Guard interfaces |
+| **Monad ecosystem** | Native agent use cases, parallel-friendly state patterns, wallet/RPC/indexing infrastructure, and ecosystem integrations |
+| **Design Partners** | Use real business missions to define task templates, acceptance criteria, failure paths, and settlement rules |
 
-## 贡献
+If you build agent infrastructure, verification layers, or storage services — or have a real workflow suited to temporary multi-agent collaboration — connect through [GitHub](https://github.com/NeoWeb3Nova), [X](https://x.com/NeoWeb3Nova), or [Telegram](https://t.me/neo_web3_nova).
 
-1. Fork 仓库并从 `main` 创建功能分支
-2. 保持 Mock / Live 边界清晰，不提交任何密钥
-3. 合约状态机或资金路径改动须补充 Foundry 测试
-4. 运行对应子系统的格式、类型、lint、测试和构建
-5. 提交 PR，说明改动范围与真实验证结果
+## Documentation
 
----
+| Document | Purpose |
+| --- | --- |
+| [Project Collaboration Guide](AGENTS.md) | Project scope, truthfulness rules, Monad constraints, and definition of done |
+| [Product Ideation and Mechanism Baseline](docs/01-project-ideation.md) | Product concept and mechanism baseline |
+| [Monad Testnet Evidence](docs/04-monad-testnet-evidence.md) | Deployment, transactions, RPC reads, and browser evidence |
+| [3-Minute Product Demo Cue Card](docs/06-roadshow-cue-card.md) | Stage-ready three-minute product demo cue card |
+| [Frontend Demo Walkthrough](docs/07-frontend-demo-walkthrough.md) | Step-by-step wallet, transaction, Runner, and Explorer workflow |
+| [Contract Development Guide](contracts/README.md) | Contract development, testing, and deployment |
+| [Agent Runtime Guide](agents/README.md) | Agent Runtime operation and recovery |
+| [Web App Guide](web/README.md) | Mock and Live Web App usage |
 
-<div align="center">
+## Contributing
 
-**AntForge** — 临时形成的 Colony，可延续的技能，在 Monad 上可验证的协作与结算。
+1. Fork the repository and create a clearly scoped feature branch from `main`.
+2. Keep the Live / Deterministic Mock / Future boundary explicit, and never commit private keys, seed phrases, or secrets.
+3. Add Foundry tests for changes to the contract state machine, permissions, or fund flows.
+4. Run the affected subsystem's formatting, type checking, linting, tests, and build.
+5. Open a Pull Request that explains the change scope, trust boundary, and actual verification results.
 
-[Live Demo](https://antforge-monad.vercel.app/) · [Explorer](https://testnet.monadexplorer.com/address/0x028268f8fF62edc596f931E17E2Fb21015f5b0A2) · [Evidence](docs/04-monad-testnet-evidence.md)
+See “Security and Limitations” for the current licensing and reuse boundary. For licensing requests, contact the maintainer through an Issue.
 
-</div>
+## Disclaimer
+
+AntForge is a Monad Testnet prototype for research, development, and demonstration. It is not financial, investment, legal, or security advice. Do not send mainnet assets to this project's contracts or demo wallets. Onchain interactions are irreversible; independently verify the network, contract address, transaction parameters, and permissions before using any testnet wallet. Future directions may change, and the roadmap in this README is not a promise of product delivery, partnership, financing, or launch.

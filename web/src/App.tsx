@@ -187,7 +187,7 @@ function AppHeader({
 }) {
   return (
     <header className="topbar">
-      <a className="brand" href="#colony-stage" aria-label="AntForge home">
+      <a className="brand" href="#colony-stage" aria-label="AntForge — jump to colony status">
         <span className="brand-mark"><BugBeetle weight="fill" /></span>
         <span className="brand-copy">
           <strong>AntForge</strong>
@@ -338,7 +338,7 @@ function ColonyStage({ snapshot }: { snapshot: ColonySnapshot }) {
 
   return (
     <section
-      aria-label="AntForge live colony execution graph"
+      aria-label="AntForge colony execution graph"
       className="colony-stage"
       id="colony-stage"
     >
@@ -355,9 +355,24 @@ function ColonyStage({ snapshot }: { snapshot: ColonySnapshot }) {
         <small><span className="online-dot" /> {snapshot.tasks.length > 0 ? "Goal ingested" : "Awaiting mission"}</small>
       </div>
 
-      <TaskChamber className="repair-position" explorerUrl={snapshot.explorerUrl} skill="repair" task={repair} />
-      <TaskChamber className="color-position" explorerUrl={snapshot.explorerUrl} skill="color" task={color} />
-      <TaskChamber className="story-position" explorerUrl={snapshot.explorerUrl} skill="story" task={story} />
+      <TaskChamber
+        className="repair-position"
+        explorerUrl={snapshot.explorerUrl}
+        skill="repair"
+        task={repair}
+      />
+      <TaskChamber
+        className="color-position"
+        explorerUrl={snapshot.explorerUrl}
+        skill="color"
+        task={color}
+      />
+      <TaskChamber
+        className="story-position"
+        explorerUrl={snapshot.explorerUrl}
+        skill="story"
+        task={story}
+      />
 
       <div className="guard-chamber chamber-position guard-position">
         <div className="chamber-title">
@@ -547,14 +562,23 @@ function EvidenceSidebar({
         <div className="event-section-heading"><strong>Real-time pheromones</strong><span>{snapshot.events.length} events</span></div>
         <div className="event-feed" aria-live="polite">
           {snapshot.events.slice(0, 8).map((event) => (
-            <EventRow event={event} explorerUrl={snapshot.explorerUrl} key={event.id} />
+            <EventRow
+              event={event}
+              explorerUrl={snapshot.explorerUrl}
+              key={event.id}
+            />
           ))}
           {snapshot.events.length === 0 && <div className="empty-events">No events observed yet.</div>}
         </div>
       </div>
 
       {snapshot.contractAddress && snapshot.explorerUrl && (
-        <a className="explorer-button" href={`${snapshot.explorerUrl}/address/${snapshot.contractAddress}`} target="_blank" rel="noreferrer">
+        <a
+          className="explorer-button"
+          href={buildExplorerUrl(snapshot.explorerUrl, "address", snapshot.contractAddress)}
+          target="_blank"
+          rel="noreferrer"
+        >
           View contract on Explorer <ArrowSquareOut />
         </a>
       )}
@@ -613,7 +637,7 @@ function TaskStatusPill({ status }: { status: TaskStatus }) {
 interface MetricCardProps {
   icon: ReactNode;
   label: string;
-  tone: string;
+  tone: "purple" | "green" | "gold" | "blue" | "neutral";
   value: string;
 }
 

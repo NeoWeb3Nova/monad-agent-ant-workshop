@@ -187,14 +187,14 @@ function AppHeader({
 }) {
   return (
     <header className="topbar">
-      <a className="brand" href="#top" aria-label="AntForge home">
+      <a className="brand" href="#colony-stage" aria-label="AntForge home">
         <span className="brand-mark"><BugBeetle weight="fill" /></span>
         <span className="brand-copy">
           <strong>AntForge</strong>
           <small>Agent 蚂蚁工坊</small>
         </span>
-        <span className="monad-lockup"><Cube weight="fill" /> Built on Monad</span>
       </a>
+      <p className="product-line">Autonomous swarm execution and settlement</p>
 
       <div className="topbar-actions">
         <StatusBadge tone={isLive ? "green" : "purple"}>
@@ -303,7 +303,13 @@ function MissionPanel({
         {running ? <CircleNotch className="spin" /> : <BugBeetle weight="fill" />}
         <span>
           <strong>{running ? "Colony working" : isLive ? "Create live colony" : "Release the swarm"}</strong>
-          <small>{running ? "Agents are following pheromone events" : "Unleash autonomous agents"}</small>
+          <small>
+            {running
+              ? "Agents are following contract events"
+              : isLive
+                ? "Fund three task-scoped rewards on Monad"
+                : "Run the deterministic swarm simulation"}
+          </small>
         </span>
       </button>
 
@@ -330,7 +336,11 @@ function ColonyStage({ snapshot }: { snapshot: ColonySnapshot }) {
   const submitted = snapshot.tasks.filter((task) => task.status === "submitted").length;
 
   return (
-    <section className="colony-stage" id="top">
+    <section
+      aria-label="AntForge live colony execution graph"
+      className="colony-stage"
+      id="colony-stage"
+    >
       <div className="sand-layer sand-one" />
       <div className="sand-layer sand-two" />
       <div className="colony-vignette" />
@@ -344,9 +354,9 @@ function ColonyStage({ snapshot }: { snapshot: ColonySnapshot }) {
         <small><span className="online-dot" /> {snapshot.tasks.length > 0 ? "Goal ingested" : "Awaiting mission"}</small>
       </div>
 
-      <TaskChamber className="repair-position" skill="repair" task={repair} />
-      <TaskChamber className="color-position" skill="color" task={color} />
-      <TaskChamber className="story-position" skill="story" task={story} />
+      <TaskChamber className="repair-position" explorerUrl={snapshot.explorerUrl} skill="repair" task={repair} />
+      <TaskChamber className="color-position" explorerUrl={snapshot.explorerUrl} skill="color" task={color} />
+      <TaskChamber className="story-position" explorerUrl={snapshot.explorerUrl} skill="story" task={story} />
 
       <div className="guard-chamber chamber-position guard-position">
         <div className="chamber-title">
@@ -390,10 +400,12 @@ function ColonyStage({ snapshot }: { snapshot: ColonySnapshot }) {
 
 function TaskChamber({
   className,
+  explorerUrl,
   skill,
   task,
 }: {
   className: string;
+  explorerUrl?: string;
   skill: Exclude<Skill, "verify" | "rogue">;
   task?: TaskView;
 }) {
@@ -418,12 +430,19 @@ function TaskChamber({
         <span><small>Worker</small><strong>{task?.workerId ? shorten(task.workerId) : "Unclaimed"}</strong></span>
       </div>
 
-      {task?.transactionHash ? (
-        <a className="chamber-proof" href="#evidence">
+      {task?.transactionHash && explorerUrl ? (
+        <a
+          className="chamber-proof"
+          href={buildExplorerUrl(explorerUrl, "tx", task.transactionHash)}
+          target="_blank"
+          rel="noreferrer"
+        >
           {shorten(task.transactionHash, 6)} <ArrowSquareOut />
         </a>
       ) : (
-        <span className="chamber-proof muted">{task?.status === "open" ? "Awaiting claim" : "Simulation only"}</span>
+        <span className="chamber-proof muted">
+          {task?.status === "open" ? "Awaiting claim" : "No Explorer transaction available"}
+        </span>
       )}
     </article>
   );
@@ -590,12 +609,18 @@ function TaskStatusPill({ status }: { status: TaskStatus }) {
   return <span className={`task-status status-${status}`}>{status}</span>;
 }
 
-function MetricCard({ icon, label, tone, value }: { icon: ReactNode; label: string; tone: string; value: string }) {
+interface MetricCardProps {
+  icon: ReactNode;
+  label: string;
+  tone: string;
+  value: string;
+}
+
+function MetricCard({ icon, label, tone, value }: MetricCardProps) {
   return (
     <div className="metric-card">
       <span className={`metric-icon metric-${tone}`}>{icon}</span>
       <span><small>{label}</small><strong>{value}</strong></span>
-      <span className="metric-sparkline"><i /><i /><i /><i /><i /></span>
     </div>
   );
 }
@@ -609,7 +634,7 @@ function EventRow({ event, explorerUrl }: { event: ColonyEventView; explorerUrl?
         <small>{formatEventTime(event.at)}</small>
         <p>{event.detail}</p>
         {event.transactionHash && explorerUrl && (
-          <a href={`${explorerUrl}/tx/${event.transactionHash}`} target="_blank" rel="noreferrer">
+          <a href={buildExplorerUrl(explorerUrl, "tx", event.transactionHash)} target="_blank" rel="noreferrer">
             {shorten(event.transactionHash, 6)} <ArrowSquareOut />
           </a>
         )}
@@ -637,6 +662,10 @@ function taskProgress(tasks: TaskView[]) {
     cancelled: 100,
   };
   return Math.round(tasks.reduce((sum, task) => sum + weights[task.status], 0) / tasks.length);
+}
+
+function buildExplorerUrl(explorerUrl: string, resource: "address" | "tx", value: string) {
+  return `${explorerUrl.replace(/\/$/, "")}/${resource}/${value}`;
 }
 
 function shorten(value?: string, size = 4) {

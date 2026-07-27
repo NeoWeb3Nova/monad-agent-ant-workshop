@@ -52,7 +52,7 @@ Use a 4px base rhythm with 8, 12, 16, 20, and 24px steps. Desktop side rails are
 
 Every node, metric, step, and lane derives from `ColonySnapshot` or existing helpers. Loading is explicitly labelled and invents no value; empty data renders an unavailable/no-events state and no unsupported link; errors expose the real wallet, RPC, or contract failure with retry and never imply success or silently substitute Mock. Clearly labelled synthetic Mock values may support the demo but must never be styled or described as Monad Testnet facts; Live evidence may never be fabricated.
 
-The artwork authority is `NeoWeb3Nova/frontend` revision `441886c3f7bbf93b82cacf67cb4bb4afa8084b96`, source path `src/components/MainContent.tsx`; production uses only the canonical local vendored path above.
+The artwork authority is `NeoWeb3Nova/frontend` revision `441886c3f7bbf93b82cacf67cb4bb4afa8084b96`, source path `src/components/MainContent.tsx`; production uses only the canonical local vendored path above, whose SHA-256 is `394b6bb0e47c40449131fbe29a515c49ba01394a2aa3b7e9b412bbd8c6ec7ab5`.
 
 ## Motion
 

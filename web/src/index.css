@@ -2,8 +2,8 @@
 
 :root {
   font-family: Inter, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
-  color: #faf7ff;
-  background: #050610;
+  color: #f5f3f8;
+  background: #080910;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -13,7 +13,7 @@
 }
 
 html {
-  background: #050610;
+  background: #080910;
 }
 
 body {
@@ -34,7 +34,7 @@ button {
 }
 
 ::selection {
-  color: white;
+  color: #f5f3f8;
   background: rgba(131, 110, 249, 0.55);
 }
 
@@ -49,10 +49,10 @@ button {
 
 ::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgba(196, 167, 255, 0.2);
+  background: rgba(185, 168, 255, 0.28);
 }
 
-@media (max-width: 1060px) {
+@media (max-width: 1180px) {
   body {
     overflow: auto;
   }

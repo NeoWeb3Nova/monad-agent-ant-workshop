@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#08070d">
+  <title>AntForge on Monad — 3 分钟路演</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600;700;900&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    /* === THEME TOKENS: DUNE LEDGER === */
+    :root {
+      --stage-bg: #050409;
+      --slide-bg: #08070d;
+      --ink: #f5f0e6;
+      --muted: #a9a2b1;
+      --sand: #d8b86e;
+      --sand-soft: #f0d9a5;
+      --violet: #9a70ff;
+      --violet-deep: #5f35c7;
+      --cyan: #78ddff;
+      --green: #75e6a3;
+      --red: #ff746c;
+      --line: rgba(245, 240, 230, .14);
+      --panel: rgba(255, 255, 255, .045);
+      --font-display: "Noto Serif SC", serif;
+      --font-body: "Noto Sans SC", sans-serif;
+      --font-mono: "IBM Plex Mono", monospace;
+      --ease-out: cubic-bezier(.16, 1, .3, 1);
+    }
+
+    /* === RESET === */
+    * { box-sizing: border-box; }
+    button, a { font: inherit; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ===========================================
+       FIXED 16:9 STAGE: MANDATORY BASE STYLES
+       Include this ENTIRE file in every presentation.
+       Slides are authored at 1920×1080 and scaled as a whole.
+       =========================================== */
+
+    /* 1. Lock the browser viewport */
+    html,
+    body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: var(--stage-bg, #000);
+    }
+
+    /* 2. Full-window deck viewport */
+    .deck-viewport {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        background: var(--stage-bg, #000);
+    }
+
+    /* 3. Fixed 16:9 design canvas.
+       JavaScript sets transform: translate(...) scale(...). */
+    .deck-stage {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        transform-origin: 0 0;
+        background: var(--slide-bg, #fff);
+    }
+
+    /* 4. Slides stack inside the fixed stage.
+       Content must be laid out at 1920×1080, not reflowed per device. */
+    .slide {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        display: block;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+        background: var(--slide-bg, #fff);
+    }
+
+    .slide.active,
+    .slide.visible {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+        z-index: 1;
+    }
+
+    /* 5. Keep media inside authored slide bounds */
+    img,
+    video,
+    canvas,
+    svg {
+        max-width: 100%;
+        max-height: 100%;
+    }
+
+    /* 6. Presentation chrome stays outside the slide design system */
+    .deck-controls {
+        position: fixed;
+        left: 50%;
+        bottom: 22px;
+        transform: translateX(-50%);
+        z-index: 1000;
+    }
+
+    /* 7. Print one fixed-size slide per page */
+    @media print {
+        html,
+        body {
+            width: 1920px;
+            height: auto;
+            overflow: visible;
+            background: #fff;
+        }
+
+        .deck-viewport {
+            position: static;
+            overflow: visible;
+            background: #fff;
+        }
+
+        .deck-stage {
+            position: static;
+            width: auto;
+            height: auto;
+            transform: none !important;
+            background: none;
+        }
+
+        .slide {
+            position: relative;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            width: 1920px;
+            height: 1080px;
+            break-after: page;
+            page-break-after: always;
+        }
+
+        .slide:last-child {
+            break-after: auto;
+            page-break-after: auto;
+        }
+
+        .deck-controls {
+            display: none !important;
+        }
+    }
+
+    /* 8. Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.2s !important;
+        }
+    }
+
+    /* === GLOBAL SLIDE ATMOSPHERE === */
+    .slide {
+      color: var(--ink);
+      font-family: var(--font-body);
+      transition: opacity .55s ease;
+      isolation: isolate;
+      background:
+        radial-gradient(circle at 82% 18%, rgba(154,112,255,.14), transparent 26%),
+        radial-gradient(circle at 12% 96%, rgba(216,184,110,.09), transparent 28%),
+        #08070d;
+    }
+    .slide::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -2;
+      opacity: .25;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 64px 64px;
+      mask-image: linear-gradient(to bottom, #000, transparent 84%);
+    }
+    .slide::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 30;
+      pointer-events: none;
+      box-shadow: inset 0 0 170px rgba(0,0,0,.66);
+    }
+    .slide-inner { position: absolute; inset: 0; padding: 92px 112px 92px; }
+    .top-rule {
+      position: absolute; top: 48px; left: 112px; right: 112px; height: 1px;
+      background: linear-gradient(90deg, var(--sand), rgba(216,184,110,.08) 62%, transparent);
+    }
+    .top-meta {
+      position: absolute; top: 67px; left: 112px; right: 112px;
+      display: flex; justify-content: space-between; align-items: center;
+      color: var(--muted); font: 500 19px/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase;
+    }
+    .slide-number { color: var(--sand); }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 14px;
+      color: var(--sand); font: 600 20px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase;
+    }
+    .eyebrow::before { content: ""; width: 46px; height: 2px; background: var(--sand); }
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-family: var(--font-display); font-size: 108px; line-height: 1.08; letter-spacing: -.008em; }
+    h2 { font-family: var(--font-display); font-size: 80px; line-height: 1.12; letter-spacing: -.006em; }
+    h3 { font-size: 34px; line-height: 1.14; }
+    .body { color: var(--muted); font-size: 28px; line-height: 1.65; }
+    .mono { font-family: var(--font-mono); }
+    .accent { color: var(--violet); }
+    .sand { color: var(--sand-soft); }
+    .cyan { color: var(--cyan); }
+    .green { color: var(--green); }
+    .red { color: var(--red); }
+
+    /* === ENTRANCE ANIMATIONS === */
+    .reveal, .reveal-left, .reveal-scale, .reveal-blur {
+      opacity: 0;
+      transition: opacity .75s var(--ease-out), transform .75s var(--ease-out), filter .75s var(--ease-out);
+    }
+    .reveal { transform: translateY(34px); }
+    .reveal-left { transform: translateX(-48px); }
+    .reveal-scale { transform: scale(.93); }
+    .reveal-blur { filter: blur(14px); transform: translateY(18px); }
+    .slide.visible .reveal, .slide.visible .reveal-left, .slide.visible .reveal-scale, .slide.visible .reveal-blur {
+      opacity: 1; transform: translate(0,0) scale(1); filter: blur(0);
+    }
+    .d1 { transition-delay: .08s; }
+    .d2 { transition-delay: .18s; }
+    .d3 { transition-delay: .3s; }
+    .d4 { transition-delay: .43s; }
+    .d5 { transition-delay: .58s; }
+
+    /* === SLIDE 1: COVER / QUEEN CORE === */
+    .cover .slide-inner { display: grid; grid-template-columns: 1.02fr .98fr; align-items: center; gap: 48px; }
+    .cover-copy { padding-top: 26px; position: relative; z-index: 3; }
+    .cover-logo { display: flex; align-items: center; gap: 18px; margin-bottom: 40px; }
+    .cover-logo img { width: 64px; height: 64px; border-radius: 16px; box-shadow: 0 0 34px rgba(154,112,255,.36); }
+    .cover-logo span { font: 600 20px/1 var(--font-mono); letter-spacing: .2em; color: var(--muted); }
+    .cover h1 .latin { display: block; font: 700 182px/.86 var(--font-mono); letter-spacing: -.07em; }
+    .cover h1 .zh { display: block; margin-top: 36px; font-size: 65px; line-height: 1.15; color: var(--sand-soft); }
+    .cover-tagline { margin-top: 46px; font-size: 30px; line-height: 1.5; color: var(--muted); }
+    .cover-tagline strong { color: var(--ink); font-weight: 600; }
+    .queen-visual { position: relative; width: 790px; height: 790px; justify-self: end; }
+    .queen-orbit { position: absolute; border: 1px solid rgba(154,112,255,.25); border-radius: 50%; inset: 28px; animation: orbit 18s linear infinite; }
+    .queen-orbit.o2 { inset: 100px; border-style: dashed; animation-direction: reverse; animation-duration: 26s; }
+    .queen-orbit::before, .queen-orbit::after { content:""; position:absolute; width:14px; height:14px; border-radius:50%; background:var(--violet); box-shadow:0 0 25px var(--violet); }
+    .queen-orbit::before { top:-7px; left:50%; }
+    .queen-orbit::after { bottom:12%; right:4%; background:var(--sand); box-shadow:0 0 25px var(--sand); }
+    .queen-card { position: absolute; inset: 124px 58px; border-radius: 42% 42% 28% 28%; overflow: hidden; border: 1px solid rgba(216,184,110,.28); background:#0c0814; box-shadow: 0 50px 120px rgba(0,0,0,.7), 0 0 90px rgba(95,53,199,.2); }
+    .queen-card img { width: 100%; height: 100%; object-fit: cover; filter: saturate(.84) contrast(1.08); transform: scale(1.08); }
+    .queen-card::after { content:""; position:absolute; inset:0; background:linear-gradient(to top, #08070d 0, transparent 46%); }
+    .orbit-label { position:absolute; right: 5px; bottom: 92px; padding: 16px 22px; border:1px solid var(--line); background:rgba(8,7,13,.84); font:500 17px/1 var(--font-mono); color:var(--cyan); letter-spacing:.08em; }
+    @keyframes orbit { to { transform: rotate(360deg); } }
+
+    /* === SLIDE 2: PROBLEM / PROTOCOL GAP === */
+    .problem-grid { position:absolute; inset: 200px 112px 110px; display:grid; grid-template-columns: 1.05fr .95fr; gap: 110px; align-items:center; }
+    .not-equal { position:relative; }
+    .not-equal h2 { font-size: 114px; line-height: 1.08; }
+    .not-equal .symbol { display:inline-block; color:var(--red); font:500 126px/1 var(--font-mono); margin:0 26px; transform:rotate(-4deg); }
+    .problem-thesis { margin-top: 44px; max-width: 760px; font-size: 34px; line-height: 1.55; color:var(--muted); }
+    .problem-thesis strong { color:var(--ink); }
+    .questions { display:flex; flex-direction:column; gap:18px; }
+    .question-row { display:grid; grid-template-columns: 72px 1fr auto; align-items:center; gap:24px; padding:27px 28px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:linear-gradient(90deg, rgba(255,255,255,.035), transparent); }
+    .question-row .n { font:600 18px/1 var(--font-mono); color:var(--sand); }
+    .question-row strong { font-size:36px; }
+    .question-row span:last-child { font:500 18px/1 var(--font-mono); color:var(--muted); }
+    .protocol-stamp { margin-top:24px; padding:24px 28px; border:1px solid rgba(154,112,255,.35); color:var(--violet); font:600 20px/1.3 var(--font-mono); letter-spacing:.09em; text-align:center; background:rgba(154,112,255,.07); }
+
+    /* === SLIDE 3: LIVE SETTLEMENT FLOW === */
+    .flow-title { position:absolute; left:112px; top:150px; }
+    .flow-title h2 { margin-top:22px; }
+    .flow-title p { margin-top:18px; color:var(--muted); font-size:28px; }
+    .flow-track { position:absolute; left:112px; right:112px; top:470px; height:260px; display:grid; grid-template-columns:repeat(5,1fr); align-items:start; }
+    .flow-track::before { content:""; position:absolute; left:120px; right:120px; top:68px; height:2px; background:rgba(255,255,255,.12); }
+    .flow-track::after { content:""; position:absolute; left:120px; top:68px; height:2px; width:calc(100% - 240px); transform-origin:left; transform:scaleX(0); background:linear-gradient(90deg,var(--sand),var(--violet),var(--cyan),var(--green)); box-shadow:0 0 18px rgba(154,112,255,.5); transition:transform 1.6s .35s var(--ease-out); }
+    .slide.visible .flow-track::after { transform:scaleX(1); }
+    .flow-step { position:relative; z-index:2; text-align:center; }
+    .flow-node { width:138px; height:138px; margin:0 auto 30px; display:grid; place-items:center; border-radius:50%; border:1px solid rgba(255,255,255,.24); background:#0d0b13; box-shadow:0 16px 40px rgba(0,0,0,.5); font:700 30px/1 var(--font-mono); }
+    .flow-step:nth-child(1) .flow-node { color:var(--sand); border-color:rgba(216,184,110,.48); }
+    .flow-step:nth-child(2) .flow-node, .flow-step:nth-child(3) .flow-node { color:var(--violet); border-color:rgba(154,112,255,.48); }
+    .flow-step:nth-child(4) .flow-node { color:var(--cyan); border-color:rgba(120,221,255,.48); }
+    .flow-step:nth-child(5) .flow-node { color:var(--green); border-color:rgba(117,230,163,.48); }
+    .flow-step h3 { font-size:30px; }
+    .flow-step p { margin-top:10px; font:500 18px/1.5 var(--font-mono); color:var(--muted); }
+    .settlement-ledger { position:absolute; left:112px; right:112px; bottom:78px; display:grid; grid-template-columns:1.2fr repeat(3,.8fr); border:1px solid var(--line); background:rgba(255,255,255,.025); }
+    .ledger-cell { padding:24px 30px; border-right:1px solid var(--line); }
+    .ledger-cell:last-child { border-right:0; }
+    .ledger-cell small { display:block; margin-bottom:9px; color:var(--muted); font:500 15px/1 var(--font-mono); letter-spacing:.09em; text-transform:uppercase; }
+    .ledger-cell strong { font-size:26px; }
+    .ledger-cell:first-child strong { color:var(--sand-soft); }
+
+    /* === SLIDE 4: MONAD EXECUTION SEMANTICS === */
+    .lanes-title { position:absolute; left:112px; top:146px; right:112px; display:flex; justify-content:space-between; align-items:end; }
+    .lanes-title p { width:530px; text-align:right; font-size:27px; line-height:1.55; color:var(--muted); }
+    .lanes-grid { position:absolute; left:112px; right:112px; top:380px; bottom:160px; display:grid; grid-template-columns:1fr 1fr; gap:32px; }
+    .lane { position:relative; overflow:hidden; border:1px solid var(--line); background:rgba(255,255,255,.03); padding:42px 44px; }
+    .lane::before { content:""; position:absolute; top:0; left:0; right:0; height:4px; }
+    .swarm::before { background:linear-gradient(90deg,var(--green),var(--cyan)); }
+    .conflict::before { background:linear-gradient(90deg,var(--red),var(--violet)); }
+    .lane-head { display:flex; justify-content:space-between; align-items:start; }
+    .lane-head small { display:block; color:var(--muted); font:500 16px/1 var(--font-mono); letter-spacing:.1em; margin-bottom:10px; }
+    .lane-head h3 { font-size:42px; }
+    .outcome { padding:10px 14px; font:600 15px/1 var(--font-mono); border:1px solid currentColor; }
+    .swarm .outcome { color:var(--green); }
+    .conflict .outcome { color:var(--red); }
+    .parallel-map { margin-top:54px; display:flex; flex-direction:column; gap:28px; }
+    .parallel-row { display:grid; grid-template-columns:120px 1fr 156px; align-items:center; gap:16px; }
+    .parallel-row .worker { color:var(--muted); font:500 17px/1 var(--font-mono); }
+    .lane-line { position:relative; height:2px; background:rgba(255,255,255,.12); overflow:visible; }
+    .lane-line::after { content:""; position:absolute; left:0; top:-1px; height:4px; width:0; background:linear-gradient(90deg,var(--violet),var(--cyan)); transition:width 1.2s var(--ease-out); }
+    .slide.visible .lane-line::after { width:100%; }
+    .ant-dot { position:absolute; top:-7px; left:0; width:16px; height:16px; border-radius:50%; background:var(--cyan); box-shadow:0 0 20px var(--cyan); opacity:0; }
+    .slide.visible .ant-dot { opacity:1; animation:antRun 2.6s .5s var(--ease-out) infinite; }
+    .task-slot { padding:13px 16px; border:1px solid rgba(120,221,255,.28); color:var(--cyan); font:600 15px/1 var(--font-mono); text-align:center; }
+    @keyframes antRun { from { left:0; } to { left:calc(100% - 16px); } }
+    .conflict-map { position:relative; margin-top:68px; height:174px; }
+    .conflict-task { position:absolute; right:28px; top:42px; width:170px; height:92px; display:grid; place-items:center; border:1px solid rgba(255,116,108,.45); color:var(--red); font:600 17px/1 var(--font-mono); background:rgba(255,116,108,.05); }
+    .claim { position:absolute; left:20px; height:2px; background:rgba(255,255,255,.13); transform-origin:left; }
+    .claim.a { top:46px; width:530px; transform:rotate(4deg); }
+    .claim.b { top:128px; width:530px; transform:rotate(-5deg); }
+    .claim::after { content:""; position:absolute; right:-5px; top:-5px; width:12px; height:12px; border-radius:50%; background:var(--violet); box-shadow:0 0 18px var(--violet); }
+    .claim-label { position:absolute; left:0; color:var(--muted); font:500 17px/1 var(--font-mono); }
+    .claim-label.one { top:12px; }
+    .claim-label.two { top:145px; }
+    .revert-badge { position:absolute; left:330px; bottom:0; padding:11px 15px; color:var(--red); border:1px solid var(--red); background:#1a0b0d; font:600 15px/1 var(--font-mono); transform:rotate(-4deg); }
+    .skill-guard { position:absolute; left:112px; right:112px; bottom:66px; display:flex; justify-content:center; align-items:center; gap:18px; color:var(--muted); font-size:23px; }
+    .skill-guard strong { color:var(--sand-soft); }
+    .skill-guard code { color:var(--red); font:600 17px/1 var(--font-mono); padding:9px 13px; border:1px solid rgba(255,116,108,.38); background:rgba(255,116,108,.06); }
+
+    /* === SLIDE 5: EVIDENCE + HONEST BOUNDARY === */
+    .evidence .slide-inner { display:grid; grid-template-columns:1.08fr .92fr; gap:82px; padding-top:178px; }
+    .evidence-copy h2 { font-size:78px; max-width:900px; }
+    .evidence-copy > p { margin-top:30px; max-width:760px; }
+    .truth-grid { margin-top:44px; display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    .truth-card { padding:26px 28px; border:1px solid var(--line); background:var(--panel); }
+    .truth-card small { display:block; font:600 15px/1 var(--font-mono); letter-spacing:.1em; margin-bottom:12px; }
+    .truth-card.real small { color:var(--green); }
+    .truth-card.mock small { color:var(--sand); }
+    .truth-card p { color:var(--muted); font-size:21px; line-height:1.55; }
+    .proof-panel { border:1px solid var(--line); background:rgba(255,255,255,.035); padding:38px; align-self:center; box-shadow:0 32px 100px rgba(0,0,0,.45); }
+    .proof-panel .project-mark { display:flex; align-items:center; gap:18px; padding-bottom:27px; border-bottom:1px solid var(--line); }
+    .proof-panel .project-mark img { width:58px; height:58px; border-radius:14px; }
+    .proof-panel .project-mark strong { font:600 24px/1 var(--font-mono); }
+    .proof-row { padding:25px 0; border-bottom:1px solid var(--line); }
+    .proof-row small { display:block; color:var(--muted); font:500 14px/1 var(--font-mono); letter-spacing:.1em; margin-bottom:10px; }
+    .proof-row strong { font-size:24px; }
+    .proof-row address { font:500 20px/1.45 var(--font-mono); color:var(--sand-soft); font-style:normal; overflow-wrap:anywhere; }
+    .demo-link { margin-top:28px; display:flex; justify-content:space-between; align-items:center; padding:21px 24px; border:1px solid rgba(154,112,255,.48); background:linear-gradient(90deg,rgba(154,112,255,.15),rgba(120,221,255,.06)); color:var(--ink); font:600 19px/1 var(--font-mono); }
+    .demo-link span:last-child { color:var(--cyan); font-size:26px; }
+    .closing-line { position:absolute; left:112px; bottom:62px; right:112px; display:flex; justify-content:space-between; align-items:center; color:var(--muted); }
+    .closing-line strong { font-family:var(--font-display); font-size:30px; color:var(--sand-soft); }
+
+    /* === PRESENTATION CHROME === */
+    .deck-controls { display:flex; align-items:center; gap:12px; padding:9px 12px; border:1px solid rgba(255,255,255,.12); border-radius:999px; background:rgba(8,7,13,.76); backdrop-filter:blur(14px); opacity:.18; transition:opacity .25s ease; }
+    .deck-controls:hover, .deck-controls:focus-within { opacity:1; }
+    .nav-btn { width:38px; height:38px; display:grid; place-items:center; border:0; border-radius:50%; color:var(--ink); background:rgba(255,255,255,.08); cursor:pointer; }
+    .nav-btn:hover { background:rgba(154,112,255,.3); }
+    .page-indicator { min-width:62px; text-align:center; color:var(--muted); font:500 13px/1 var(--font-mono); }
+    .progress-rail { position:fixed; left:0; right:0; bottom:0; height:3px; z-index:1001; background:rgba(255,255,255,.06); }
+    .progress-bar { height:100%; width:20%; background:linear-gradient(90deg,var(--sand),var(--violet),var(--cyan)); transition:width .55s var(--ease-out); }
+
+    /* === INLINE EDITING === */
+    .edit-hotzone { position:fixed; top:0; left:0; width:80px; height:80px; z-index:10000; cursor:pointer; }
+    .edit-toggle { position:fixed; top:18px; left:18px; z-index:10001; width:46px; height:46px; border:1px solid rgba(255,255,255,.14); border-radius:12px; color:var(--ink); background:rgba(8,7,13,.9); opacity:0; pointer-events:none; transition:opacity .3s ease; cursor:pointer; }
+    .edit-toggle.show, .edit-toggle.active { opacity:1; pointer-events:auto; }
+    body.editing [data-editable="true"] { outline:1px dashed rgba(120,221,255,.6); outline-offset:6px; cursor:text; }
+    .edit-status { position:fixed; top:24px; left:78px; z-index:10001; color:var(--cyan); font:500 12px/1 var(--font-mono); opacity:0; transition:opacity .2s; }
+    body.editing .edit-status { opacity:1; }
+  </style>
+</head>
+<body>
+  <!-- === FIXED VIEWPORT + STAGE === -->
+  <div class="deck-viewport">
+    <main class="deck-stage" id="deckStage" aria-label="AntForge 3 分钟路演演示">
+
+      <!-- Slide 1 speaker note: 大家好，我带来的项目叫 AntForge。用户提交一个目标并锁定 MON，Queen 拆解，Worker 执行，Guard 验证，合约结算。 -->
+      <section class="slide cover active" aria-label="AntForge 封面">
+        <div class="top-rule"></div><div class="top-meta"><span>ANTFORGE / MONAD TESTNET</span><span class="slide-number">01 — 05</span></div>
+        <div class="slide-inner">
+          <div class="cover-copy">
+            <div class="cover-logo reveal-left d1"><img src="data:image/webp;base64,UklGRuYKAABXRUJQVlA4INoKAABwNQCdASqSAKoAPikShkIhoQsOeloMAUJQHYDlkxOTDzvbX/gPwr0kR3exP9V90nzJ9LXmE/pn/nusJ5mv51/tf207I39y9RL+Tf3zrffQ68tf9sfhw/bb9tfaFzf3bL8nvr72S/r2iL9YP2HnLvgXrn/O5gnaQf9bwKS4SrShuXuQj7WlKH8wMJbAtQUz4Np58R5xRSf5KFtLlPwyKKm4RjO5YvNjcy+dQsXnWFDm+0SA6/aiRerRRdImuqReWivGK9agK2BZz91Dyxdds+nvjJ2P7kpD2w7DcxzXFJsxDsahDcDWAr+vKgy5v8CIbYpwdpEH2zzCl8FKiXIJPaSKwILG5GZEAiN3Msy3xydON6tLSmK3ZMoLCYp0l57nTc88g2gb16oKaJrZ6/YhxWsTI74u6M+i7c6l7AICDe65AZ3xTvBSTOI5jNuR7uV3ikbzVFAFh801vnJS7nXK1FKM5R2TZFPX3cLQJzwN53vK2Rlfu3mOMoSUg3yvFu3p+jDOibMaZ9LJe8tsbZ83/eEjrjUY5F9cEDkqXzDNMVBii+mzutV85YUkRHdSyKDW8jy5uVMAAP7/LCSX9G9/uX54bNSsFf+xKQwIEdAiqktHXML7Wgi2jlVx84iY47xgv8vbZKdLnawtWcfwTGZEIS2YYKW3zk+43Mx3N9/zOWU/cKakXholEDWmALWWfzrVcEt3wG1I5BAjNAMJs0CrKdl0piMrAjZ9hxxPHLeE9o8Qb5/0cmald2g5jOhTumROssqLbA5IXP+YImeagf8u/yPltWJ8lbMpPqa9CiFHaBAVji7Oc+hWOfP+z8kKJDIEstQ0Eoxss4EG9jNTPLcKHKT1DoVlMbIl/kRVgf0LM1+5lty/u6RcbLSM+QVniP+NRJyOjtg/QbMH7HmD8SxEsTlmSTyZZr1u/3UVl0GWnRJAUEJ6okr1BsiM/V6/9mAELZlGvQB2mT0Vj2IlUv6BDqBMTOlRANbfQsZtUQ3NMdKeULLhz5hQvEqSBAoi+FPKP2g8GBTJsJ3KociZprufsRoo7lYwvsYn9UtBqgPViwDGmgh/6z5YzsDTtn+DtiOjc8/+NwGMq/s1YZEQ5n57tn6WCKR6xBMby5BmzAQtk97aJBkZAgTN4v2JgUM2p20/a5x9cnn5W88UQlU4OmcLHpsg90qi+JfLwqpQ4B80LiluuhzCfmVrpcXbgnGrZzll+hMzR6xakQQSHmAc1o2+w00utIz8hB9Nj1x863wfj+r+yeHH5I+cyc8u0xIOk6kKUoSLrgn5c9d6SZyVaGLv04fiTwdXj+li21e3TZSmHXwdNxlEmcq3FiEP8nfzRnIucZ1x+FRHTSZtrm5Jpl4Dz33bg7Fy4AqzmcKOs6JSQGCZzA5sX4dUeRt9FftHs2dJ7P+5p6Q2oiOCDMGd+Y9gLgeJv5BSymuZqwZkyMIA0be/uhB4hYjkRWy4mmyaYXf4plEBuD3OznXFJWiQukmg9Y/e7Mz5/LAbXwNh4/UUF0LeE7qyLOHqe0sbwgny6pmqZSeVT69uBv6j0UQ0/ztGYuy0868Wk27s10L6bsTT1/6hQnpNPuzFrEssMTrpq5zqhfa25NrHVosbW9+UO5UUyvpnVfuqWPtK4qP+kvY8O/B5gnGqSUgTeW0H1vnzFBPiwZOnLLJ2lZnbKpDhILQ8rt391E+S9UF7kN8FDthynHBEyP7xJQnDP+Ql123fxdZbXL+QfS7/d5yUNEMFz0QQ7ZyItW5zduCEy9Sv/+VOQk96Dcpib9hNStzqOENZjLDBn3Es9vev1RFoqVDO5Uuo7yClfq83qbHeZxRgqWj7oqEticU8QNg9tNeW2vOd/I3sAzimKqfHVIm/o4RMmdq2aelgjrVllZlkzSAoQgePC35EhQYH4VsVZv4MJsHVM42xrnzkj6Sp4ej4GButmX4PNDDOtQ9y6FvUTDlVb3Wppy5DnX4Ob6UCiFbgBkNT8Z8bzOsxh123ybUuG4xnsZsVMFxT8o5Vz4lgcLAX2s6m39XmFF1+otbkvIoTYKHxeiSdRBtlmiUlDz9T5OdMIvdBFggeKuLw7VVl+remg14SQ9ZXEVDmqNklLlq7pv4eqk07F54fBf4Xuj+j1mQhrGoTVU6RajrLUoHh3LHqQr5bCXHF5Uh6LchvXNeOrVersTq5xa1IDQHJQStDv71gBXDP+ntAWSrNPaGXDcirErrvYrLQAZnlIV3mQUFj7ZTY7Yc6ZPnEjkgkCcg3uWUib+Ty1l8EMWo3/slluZ0LxqlKD1OOOuYSTz7sOmsUZxsSWdErJy8Onx5ROuBVQc9T9NU37GdMBeqHvBmAO8WDRbfSdf6nhRWO3IDI2mcPUPno6kk2DPsTqQ3hqVVOCo3+yjbP6K/l3tjVaKO5HB96vzKff6/omSlA3yyyKxDxP06rEm0uMSYgUiK1lEQDa+hGxNXlEw4XY1YvVJ/yJGrdczXXnA6GLm3kI3TiNuCh169QN7+85/v9fkwcb6KC9Z6jCPeg4Wl0CPd/mv8JHwhan7+Lndm2yoKH4LW98bUvVMbu7mOkuHZ4kU1+xKVlSkH9zP9xw9dQqzH8lkMyTsaYczWc5OVRDyrRvWT4yNpQrla25cmo9hI2ocRBNju9niTFhEOcsA3qcAjmf/iNgmY3uaK2JTv9+BrdOJba8im2Co+JwwC/LcfQCJbYGlBOlsRp0LUFNikx/5I82X9PIP0ocUizs3VediNz17OETHB/EpJsRVpK3hXKOxGqL4dUw1uo/Q0cZeR+WTjZ27zbdmisjPiI6CL0zoMwEV2ZuIxTBqND+0k74IhIxjybfw5u9hKVJESHJscmxP1M2keHgJeZ0MnQ0m1xvHq929NEkPuepZKxbASU0xAh3FvqdpfuCcz4RnExaWskHyO6zJIRu3RYxj7L3634NyM1xrLhB8mGtya/0yIwVLru+x32Y0+0Ise07iDRqu/AeMZkWu9++Iq3GXt97g0xQLM5/48ZSwFQ+/7Q/CSGOCUNfHjld0bIP9u0mOaCTUkjpLhpIhI/9jOqMxMkea+gTP++sMT2nv/y33//0MmNObeTu+coT//hQdSo9CDMJhaP8xV4bza7xwrGOzwMIvma/AtI2d6/CgiSkD5O69E7b0V8g19adZ1H6tYqmP4gfDkiDAYU4tk87IAPYUgSJKu2pCm6GiWfsFh0xPvVdIkaq2XjzXvTg0MlvMB/rFhMScUhnV39DOxh3HvtP82HVoVS+GToeXdFVM9NWwhjKHG+kVUHazpUQgNzflj6B/OLNH0jPMJynw/SyGott13BLXgmIFZZsJ9iNGLSX9OG+hqdgpjBbx0VkBaJkzvLHURuEK5Fzyu0eN3rq/hYYASCSgwGVhEQqn+WRHKQmkov30UzS0u9/EJuDHTrUTGPrsm1YCnT4XeiRPwpEvYlLCHXcNCRcruTZz5dtewOatvLcBmWYradDs10mLkgsvffnO/udobAX4CVtqFOdHPWHdv+U5wPjQ2mzQFnPrdQFFsbskohJ6Zu5fv2NHh2zebCdd6pj4dDvmUgBzbkrPv9cMarvhTMvKPigURxI/cCh6D5gmz8AWgvthR3GD70M6PE4RP99L8N6HLbGBtZuOb79KJsrTiBm8FCU24xaTDd0KolTYV8gq6AhyomqvVUX+lk06p2YxMO1TvemIgg9wjcUmMHWxA0Tf/Q2yndlzQAAAA=" alt="AntForge 图标"><span>AGENT COLONY PROTOCOL</span></div>
+            <h1 data-editable="true"><span class="latin reveal-blur d2">AntForge</span><span class="zh reveal d3">一个目标，唤醒一支蚁群</span></h1>
+            <p class="cover-tagline reveal d4" data-editable="true"><strong>Queen 拆解 · Worker 执行 · Guard 验证</strong><br>真实 MON，任务级结算。</p>
+          </div>
+          <div class="queen-visual reveal-scale d2" aria-hidden="true">
+            <div class="queen-orbit"></div><div class="queen-orbit o2"></div>
+            <div class="queen-card"><img src="data:image/webp;base64,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" alt=""></div>
+            <div class="orbit-label">LIVE SETTLEMENT / CHAIN 10143</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 2 speaker note: 真正的问题不是谁会生成图片，而是多只 Agent 如何可信地分工、提交、验证和分钱。 -->
+      <section class="slide" aria-label="问题与协议定位">
+        <div class="top-rule"></div><div class="top-meta"><span>THE COORDINATION GAP</span><span class="slide-number">02 — 05</span></div>
+        <div class="problem-grid">
+          <div class="not-equal">
+            <div class="eyebrow reveal-left d1">不是 Agent 商城</div>
+            <h2 class="reveal-blur d2" data-editable="true">生成<span class="symbol">≠</span>协作</h2>
+            <p class="problem-thesis reveal d3" data-editable="true">模型会生成内容，<strong>协议必须回答：</strong><br>谁执行？谁验证？谁拿钱？</p>
+          </div>
+          <div class="questions">
+            <div class="question-row reveal-left d2"><span class="n">01</span><strong data-editable="true">可信分工</strong><span>SKILL MATCH</span></div>
+            <div class="question-row reveal-left d3"><span class="n">02</span><strong data-editable="true">可验证提交</strong><span>OUTPUT HASH</span></div>
+            <div class="question-row reveal-left d4"><span class="n">03</span><strong data-editable="true">原生 MON 结算</strong><span>PULL PAYMENT</span></div>
+            <div class="protocol-stamp reveal d5" data-editable="true">ANTFORGE = COORDINATION + SETTLEMENT</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 3 speaker note: 浏览器钱包确认 createColony，后续由独立 Agent 钱包自动 claim、submit、verify、withdraw。 -->
+      <section class="slide" aria-label="Live 链上闭环">
+        <div class="top-rule"></div><div class="top-meta"><span>LIVE SETTLEMENT FLOW</span><span class="slide-number">03 — 05</span></div>
+        <div class="flow-title">
+          <div class="eyebrow reveal-left d1">一笔 Requester 交易</div>
+          <h2 class="reveal-blur d2" data-editable="true">唤醒整座蚁穴</h2>
+          <p class="reveal d3" data-editable="true">其余交易，由独立 Agent 钱包收到事件后自主签署。</p>
+        </div>
+        <div class="flow-track">
+          <div class="flow-step reveal-scale d1"><div class="flow-node">01</div><h3 data-editable="true">Create</h3><p>0.003 MON<br>ESCROW</p></div>
+          <div class="flow-step reveal-scale d2"><div class="flow-node">02</div><h3 data-editable="true">Claim</h3><p>3 WORKERS<br>3 TASK IDs</p></div>
+          <div class="flow-step reveal-scale d3"><div class="flow-node"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iI2Q4YzJmZiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzdiNDNlOCIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxnIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNnKSIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxlbGxpcHNlIGN4PSIxNyIgY3k9IjMzIiByeD0iMTAiIHJ5PSI4IiBmaWxsPSIjMTcxMDIwIi8+PGVsbGlwc2UgY3g9IjM0IiBjeT0iMzEiIHJ4PSI4IiByeT0iNyIgZmlsbD0iIzIxMTIyZiIvPjxjaXJjbGUgY3g9IjQ5IiBjeT0iMjkiIHI9IjciIGZpbGw9IiMyYjE3NDAiLz48cGF0aCBkPSJtMjMgMjctOC0xMm05IDIyLTExIDEzbTE2LTE0LTIgMTVtMTItMTUgNSAxNG0yLTE3IDEyIDhtLTEwLTE2IDgtN20tNSA1IDUtMm0tNyA1IDcgM005IDI1IDUgMjBtNCAyMS01IDUiLz48L2c+PHJlY3QgeD0iMTAiIHk9IjciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxMyIgcng9IjMiIGZpbGw9IiM4YjVjZjYiIHN0cm9rZT0iI2U3ZGNmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0ibTEzIDEzIDQgNCA3LTgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvc3ZnPg==" alt="Worker" width="72"></div><h3 data-editable="true">Submit</h3><p>OUTPUT HASH<br>ONCHAIN</p></div>
+          <div class="flow-step reveal-scale d4"><div class="flow-node"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iI2M1ZjRmZiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzc3NTRmZiIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxnIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNnKSIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxlbGxpcHNlIGN4PSIxNyIgY3k9IjM1IiByeD0iMTAiIHJ5PSI4IiBmaWxsPSIjMTExODI3Ii8+PGVsbGlwc2UgY3g9IjM0IiBjeT0iMzMiIHJ4PSI4IiByeT0iNyIgZmlsbD0iIzE3MjAzMyIvPjxjaXJjbGUgY3g9IjQ5IiBjeT0iMzEiIHI9IjciIGZpbGw9IiMyMDI5NGEiLz48cGF0aCBkPSJtMjMgMjktOC0xMm05IDIyLTExIDEzbTE2LTE0LTIgMTVtMTItMTUgNSAxNG0yLTE3IDEyIDhtLTEwLTE2IDgtN20tNSA1IDUtMm0tNyA1IDcgMyIvPjwvZz48cGF0aCBkPSJNMTYgOCAyOSAxM3Y5YzAgOC01IDEzLTEzIDE3QzggMzUgMyAzMCAzIDIydi05WiIgZmlsbD0iIzY3NTJkOSIgc3Ryb2tlPSIjZDhkMmZmIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJtMTAgMjIgNCA0IDgtMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvc3ZnPg==" alt="Guard" width="72"></div><h3 data-editable="true">Verify</h3><p>RELATION +<br>AUTHORIZATION</p></div>
+          <div class="flow-step reveal-scale d5"><div class="flow-node">MON</div><h3 data-editable="true">Withdraw</h3><p>PULL<br>SETTLEMENT</p></div>
+        </div>
+        <div class="settlement-ledger reveal d5">
+          <div class="ledger-cell"><small>Mission</small><strong data-editable="true">修复照片 · 恢复颜色 · 找回故事</strong></div>
+          <div class="ledger-cell"><small>Reward</small><strong>3 × 0.001 MON</strong></div>
+          <div class="ledger-cell"><small>Status</small><strong class="green">OPEN → SETTLED</strong></div>
+          <div class="ledger-cell"><small>Evidence</small><strong class="cyan">TX + BLOCK</strong></div>
+        </div>
+      </section>
+
+      <!-- Slide 4 speaker note: Swarm Lane 将不同 taskId 隔离；Conflict Lane 对同一 taskId 保持排他；Skill Guard 在合约层拒绝越权。 -->
+      <section class="slide" aria-label="Monad 原生机制">
+        <div class="top-rule"></div><div class="top-meta"><span>EXECUTION SEMANTICS</span><span class="slide-number">04 — 05</span></div>
+        <div class="lanes-title">
+          <div><div class="eyebrow reveal-left d1">为 Monad 设计</div><h2 class="reveal-blur d2" data-editable="true">低冲突，不等于无冲突</h2></div>
+          <p class="reveal d3" data-editable="true">把可并行的任务分开，<br>把必须排他的冲突留下。</p>
+        </div>
+        <div class="lanes-grid">
+          <article class="lane swarm reveal-left d2">
+            <div class="lane-head"><div><small>DIFFERENT TASK IDs</small><h3 data-editable="true">Swarm Lane</h3></div><span class="outcome">LOW CONFLICT</span></div>
+            <div class="parallel-map">
+              <div class="parallel-row"><span class="worker">REPAIR</span><div class="lane-line"><i class="ant-dot"></i></div><span class="task-slot">TASK / 01</span></div>
+              <div class="parallel-row"><span class="worker">COLOR</span><div class="lane-line"><i class="ant-dot"></i></div><span class="task-slot">TASK / 02</span></div>
+              <div class="parallel-row"><span class="worker">STORY</span><div class="lane-line"><i class="ant-dot"></i></div><span class="task-slot">TASK / 03</span></div>
+            </div>
+          </article>
+          <article class="lane conflict reveal-left d3">
+            <div class="lane-head"><div><small>SAME TASK ID</small><h3 data-editable="true">Conflict Lane</h3></div><span class="outcome">INTENTIONAL</span></div>
+            <div class="conflict-map">
+              <span class="claim-label one">WORKER A / SUCCESS</span><i class="claim a"></i>
+              <span class="claim-label two">WORKER B / REVERT</span><i class="claim b"></i>
+              <div class="conflict-task">TASK / 01</div><span class="revert-badge">TaskNotOpen()</span>
+            </div>
+          </article>
+        </div>
+        <div class="skill-guard reveal d5"><strong>Skill Guard</strong><span>无 Repair 技能的 Rogue Ant</span><span>→</span><code>SkillMismatch()</code></div>
+      </section>
+
+      <!-- Slide 5 speaker note: 输出模块是 deterministic mock；链上钱包、托管、状态机、回执和 MON 结算是真实的。 -->
+      <section class="slide evidence" aria-label="链上证据与真实边界">
+        <div class="top-rule"></div><div class="top-meta"><span>PROOF, NOT PROMISES</span><span class="slide-number">05 — 05</span></div>
+        <div class="slide-inner">
+          <div class="evidence-copy">
+            <div class="eyebrow reveal-left d1">真实证据，诚实边界</div>
+            <h2 class="reveal-blur d2" data-editable="true">链上是真的，<br><span class="sand">边界也是真的。</span></h2>
+            <p class="body reveal d3" data-editable="true">AntForge 先证明多 Agent 的协作与结算机制成立。</p>
+            <div class="truth-grid">
+              <div class="truth-card real reveal d3"><small>REAL / ONCHAIN</small><p data-editable="true">钱包、技能、托管、状态机、回执、MON 结算</p></div>
+              <div class="truth-card mock reveal d4"><small>MOCK / OFFCHAIN</small><p data-editable="true">Queen 规划模板、图片与文本输出</p></div>
+            </div>
+          </div>
+          <aside class="proof-panel reveal-scale d3">
+            <div class="project-mark"><img src="data:image/webp;base64,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" alt="AntForge"><strong>ANTFORGE / TESTNET</strong></div>
+            <div class="proof-row"><small>CONTRACT</small><address>0x028268f8fF62edc596f931E17E2Fb21015f5b0A2</address></div>
+            <div class="proof-row"><small>SOURCE VERIFICATION</small><strong class="green">Sourcify / exact_match</strong></div>
+            <div class="proof-row"><small>COMPLETE EVIDENCE</small><strong data-editable="true">Create · Claim · Submit · Verify · Withdraw</strong></div>
+            <a class="demo-link" href="https://antforge-monad.vercel.app/" target="_blank" rel="noreferrer"><span>antforge-monad.vercel.app</span><span>↗</span></a>
+          </aside>
+        </div>
+        <div class="closing-line reveal d5"><strong data-editable="true">一个目标，多只 Agent，真实 MON。</strong><span class="mono">ANTFORGE ON MONAD</span></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- === NAVIGATION CHROME === -->
+  <nav class="deck-controls" aria-label="幻灯片导航">
+    <button class="nav-btn" id="prevBtn" aria-label="上一页">←</button>
+    <span class="page-indicator" id="pageIndicator">1 / 5</span>
+    <button class="nav-btn" id="nextBtn" aria-label="下一页">→</button>
+  </nav>
+  <div class="progress-rail" aria-hidden="true"><div class="progress-bar" id="progressBar"></div></div>
+
+  <!-- === INLINE EDITING CHROME === -->
+  <div class="edit-hotzone" title="编辑模式"></div>
+  <button class="edit-toggle" id="editToggle" title="编辑模式 (E)">✎</button>
+  <span class="edit-status">EDIT MODE · Ctrl+S 保存</span>
+
+  <script>
+    /* === SLIDE PRESENTATION CONTROLLER === */
+    class SlidePresentation {
+      constructor() {
+        this.slides = [...document.querySelectorAll('.slide')];
+        this.currentSlide = 0;
+        this.stage = document.getElementById('deckStage');
+        this.wheelLocked = false;
+        this.touchStartX = 0;
+        this.setupStageScale();
+        this.setupNavigation();
+        this.showSlide(0, false);
+      }
+      setupStageScale() {
+        const scale = () => {
+          const factor = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+          const x = (window.innerWidth - 1920 * factor) / 2;
+          const y = (window.innerHeight - 1080 * factor) / 2;
+          this.stage.style.transform = `translate(${x}px, ${y}px) scale(${factor})`;
+        };
+        scale();
+        window.addEventListener('resize', scale);
+      }
+      setupNavigation() {
+        document.getElementById('prevBtn').addEventListener('click', () => this.prev());
+        document.getElementById('nextBtn').addEventListener('click', () => this.next());
+        document.addEventListener('keydown', (event) => {
+          if (document.body.classList.contains('editing') && event.target.isContentEditable) return;
+          if (['ArrowRight','ArrowDown','PageDown',' '].includes(event.key)) { event.preventDefault(); this.next(); }
+          if (['ArrowLeft','ArrowUp','PageUp'].includes(event.key)) { event.preventDefault(); this.prev(); }
+          if (event.key === 'Home') this.showSlide(0);
+          if (event.key === 'End') this.showSlide(this.slides.length - 1);
+        });
+        window.addEventListener('wheel', (event) => {
+          if (this.wheelLocked || Math.abs(event.deltaY) < 24) return;
+          this.wheelLocked = true;
+          event.deltaY > 0 ? this.next() : this.prev();
+          setTimeout(() => this.wheelLocked = false, 650);
+        }, { passive: true });
+        window.addEventListener('touchstart', (event) => this.touchStartX = event.changedTouches[0].screenX, { passive: true });
+        window.addEventListener('touchend', (event) => {
+          const delta = event.changedTouches[0].screenX - this.touchStartX;
+          if (Math.abs(delta) > 60) delta < 0 ? this.next() : this.prev();
+        }, { passive: true });
+      }
+      showSlide(index, updateHash = true) {
+        this.currentSlide = Math.max(0, Math.min(index, this.slides.length - 1));
+        this.slides.forEach((slide, i) => {
+          slide.classList.toggle('active', i === this.currentSlide);
+          slide.classList.toggle('visible', i === this.currentSlide);
+        });
+        document.getElementById('pageIndicator').textContent = `${this.currentSlide + 1} / ${this.slides.length}`;
+        document.getElementById('progressBar').style.width = `${((this.currentSlide + 1) / this.slides.length) * 100}%`;
+        if (updateHash) history.replaceState(null, '', `#${this.currentSlide + 1}`);
+      }
+      next() { this.showSlide(this.currentSlide + 1); }
+      prev() { this.showSlide(this.currentSlide - 1); }
+    }
+
+    /* === LIGHTWEIGHT INLINE EDITOR === */
+    class InlineEditor {
+      constructor() {
+        this.isActive = false;
+        this.elements = [...document.querySelectorAll('[data-editable="true"]')];
+        this.restore();
+      }
+      toggleEditMode() {
+        this.isActive = !this.isActive;
+        document.body.classList.toggle('editing', this.isActive);
+        document.getElementById('editToggle').classList.toggle('active', this.isActive);
+        this.elements.forEach(el => el.contentEditable = String(this.isActive));
+      }
+      save() {
+        const content = this.elements.map((el, index) => ({ index, html: el.innerHTML }));
+        localStorage.setItem('antforge-deck-edits', JSON.stringify(content));
+      }
+      restore() {
+        try {
+          const saved = JSON.parse(localStorage.getItem('antforge-deck-edits') || '[]');
+          saved.forEach(item => { if (this.elements[item.index]) this.elements[item.index].innerHTML = item.html; });
+        } catch (_) {}
+      }
+    }
+
+    const deck = new SlidePresentation();
+    const editor = new InlineEditor();
+    const hashIndex = Number(location.hash.slice(1)) - 1;
+    if (Number.isInteger(hashIndex) && hashIndex >= 0) deck.showSlide(hashIndex, false);
+
+    /* === EDIT HOTZONE WITH GRACE PERIOD === */
+    const hotzone = document.querySelector('.edit-hotzone');
+    const editToggle = document.getElementById('editToggle');
+    let hideTimeout = null;
+    const showEdit = () => { clearTimeout(hideTimeout); editToggle.classList.add('show'); };
+    const hideEdit = () => { hideTimeout = setTimeout(() => { if (!editor.isActive) editToggle.classList.remove('show'); }, 400); };
+    hotzone.addEventListener('mouseenter', showEdit);
+    hotzone.addEventListener('mouseleave', hideEdit);
+    editToggle.addEventListener('mouseenter', showEdit);
+    editToggle.addEventListener('mouseleave', hideEdit);
+    hotzone.addEventListener('click', () => editor.toggleEditMode());
+    editToggle.addEventListener('click', () => editor.toggleEditMode());
+    document.addEventListener('keydown', (event) => {
+      if ((event.key === 'e' || event.key === 'E') && !event.target.isContentEditable) editor.toggleEditMode();
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's' && editor.isActive) { event.preventDefault(); editor.save(); }
+    });
+  </script>
+</body>
+</html>

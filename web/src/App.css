@@ -296,6 +296,10 @@ button:disabled {
   min-height: 0;
   border: 1px solid var(--border-subtle);
   border-radius: var(--panel-radius);
+}
+
+.panel,
+.workflow-console {
   background: var(--surface-panel);
 }
 

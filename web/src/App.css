@@ -600,10 +600,12 @@ button:disabled {
 
 .progress-track span {
   display: block;
+  width: 100%;
   height: 100%;
   border-radius: inherit;
   background: var(--monad);
-  transition: width 240ms ease;
+  transform-origin: left;
+  transition: transform 240ms ease;
 }
 
 .colony-stage {
@@ -611,15 +613,6 @@ button:disabled {
   overflow: hidden;
   isolation: isolate;
   border-color: var(--border-strong);
-  background-color: var(--surface-root);
-  background-image:
-    linear-gradient(180deg, rgba(8, 9, 16, 0.12), rgba(8, 9, 16, 0.34)),
-    radial-gradient(circle at 50% 46%, transparent 34%, rgba(8, 9, 16, 0.3) 100%),
-    url('/colony/antforge-reference-colony.webp'),
-    url('/colony/ant-colony-diorama.svg');
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
 }
 
 .sand-layer {
@@ -666,6 +659,14 @@ button:disabled {
   stroke-width: 4;
   opacity: 1;
   animation: pheromone-flow 5s linear infinite;
+}
+
+.pheromone-pulse[data-settled="true"] {
+  stroke: var(--success);
+  stroke-width: 3;
+  stroke-dasharray: none;
+  opacity: 0.82;
+  animation: none;
 }
 
 .pheromone-pulse[data-error="true"] {
@@ -1001,6 +1002,7 @@ button:disabled {
 .rogue-gate[data-state="failed"] {
   border-color: var(--danger);
   color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface-inset));
 }
 
 .rogue-gate > svg {
@@ -1281,12 +1283,6 @@ button:disabled {
   align-items: center;
   gap: 6px;
   min-width: 0;
-  opacity: 0.48;
-  transition: opacity 200ms ease;
-}
-
-.workflow-step[data-active="true"] {
-  opacity: 1;
 }
 
 .step-icon {
@@ -1297,12 +1293,14 @@ button:disabled {
   place-items: center;
   border: 1px solid var(--border-subtle);
   border-radius: 50%;
-  color: var(--monad-soft);
+  color: var(--text-muted);
   background: var(--surface-inset);
+  transition: border-color 200ms ease, color 200ms ease;
 }
 
 .workflow-step[data-active="true"] .step-icon {
   border-color: var(--monad);
+  color: var(--monad-soft);
 }
 
 .step-icon svg {
@@ -1318,6 +1316,7 @@ button:disabled {
 
 .workflow-step strong {
   overflow: hidden;
+  color: var(--text-secondary);
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1330,6 +1329,14 @@ button:disabled {
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.workflow-step[data-active="true"] strong {
+  color: var(--text-primary);
+}
+
+.workflow-step[data-active="true"] small {
+  color: var(--text-secondary);
 }
 
 .step-arrow {

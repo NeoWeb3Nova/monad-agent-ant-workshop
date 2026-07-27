@@ -323,7 +323,9 @@ function MissionPanel({
       <div className="efficiency-card">
         <span>Swarm progress</span>
         <strong>{taskProgress(snapshot.tasks)}%</strong>
-        <div className="progress-track"><span style={{ width: `${taskProgress(snapshot.tasks)}%` }} /></div>
+        <div className="progress-track">
+          <span style={{ transform: `scaleX(${taskProgress(snapshot.tasks) / 100})` }} />
+        </div>
       </div>
     </aside>
   );
@@ -465,22 +467,29 @@ function TaskChamber({
 }
 
 function PheromoneNetwork({ tasks, rogue }: { tasks: TaskView[]; rogue: LaneOutcome }) {
-  const routeActive = (skill: Exclude<Skill, "verify" | "rogue">) => {
+  const routeState = (skill: Exclude<Skill, "verify" | "rogue">) => {
     const task = tasks.find((item) => item.skill === skill);
-    return Boolean(task && task.status !== "open");
+    return {
+      active: task?.status === "claimed" || task?.status === "submitted",
+      settled: task?.status === "settled",
+      submitted: task?.status === "submitted",
+    };
   };
-  const guardActive = tasks.some((task) => task.status === "submitted" || task.status === "settled");
-  const treasuryActive = tasks.some((task) => task.status === "settled");
+  const repair = routeState("repair");
+  const color = routeState("color");
+  const story = routeState("story");
+  const treasuryActive = tasks.some((task) => task.status === "submitted");
+  const treasurySettled = !treasuryActive && tasks.some((task) => task.status === "settled");
 
   const routes = [
-    { id: "queen-repair", path: "M500 118 C420 150 340 175 224 220", active: routeActive("repair"), error: false },
-    { id: "queen-color", path: "M500 118 C585 148 655 175 780 220", active: routeActive("color"), error: false },
-    { id: "queen-story", path: "M500 118 C395 245 300 350 220 475", active: routeActive("story"), error: false },
-    { id: "repair-guard", path: "M224 220 C310 315 390 365 500 405", active: guardActive, error: false },
-    { id: "color-guard", path: "M780 220 C690 310 610 365 500 405", active: guardActive, error: false },
-    { id: "story-guard", path: "M220 475 C325 470 410 445 500 405", active: guardActive, error: false },
-    { id: "guard-treasury", path: "M500 405 C610 465 690 485 790 495", active: treasuryActive, error: false },
-    { id: "rogue-repair", path: "M500 655 C430 535 320 350 224 220", active: rogue.state !== "idle", error: rogue.state === "passed" },
+    { id: "queen-repair", path: "M500 118 C420 150 340 175 224 220", ...repair, error: false },
+    { id: "queen-color", path: "M500 118 C585 148 655 175 780 220", ...color, error: false },
+    { id: "queen-story", path: "M500 118 C395 245 300 350 220 475", ...story, error: false },
+    { id: "repair-guard", path: "M224 220 C310 315 390 365 500 405", active: repair.submitted, settled: repair.settled, error: false },
+    { id: "color-guard", path: "M780 220 C690 310 610 365 500 405", active: color.submitted, settled: color.settled, error: false },
+    { id: "story-guard", path: "M220 475 C325 470 410 445 500 405", active: story.submitted, settled: story.settled, error: false },
+    { id: "guard-treasury", path: "M500 405 C610 465 690 485 790 495", active: treasuryActive, settled: treasurySettled, error: false },
+    { id: "rogue-repair", path: "M500 655 C430 535 320 350 224 220", active: rogue.state === "running", settled: false, error: rogue.state === "passed" },
   ];
 
   return (
@@ -505,6 +514,7 @@ function PheromoneNetwork({ tasks, rogue }: { tasks: TaskView[]; rogue: LaneOutc
             className="pheromone-pulse"
             data-active={route.active}
             data-error={route.error}
+            data-settled={route.settled}
           />
           {route.active && (
             <g className="moving-ant">

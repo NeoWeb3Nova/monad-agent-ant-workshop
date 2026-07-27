@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "AntForge on Monad — System Architecture",
+    "subtitle": "Public requester UI, onchain coordination, and local autonomous agent wallets",
+    "output": "antforge-system.html",
+    "viewBox": [1240, 900]
+  },
+  "components": [
+    { "id": "requester", "type": "external", "label": "Requester", "sublabel": "injected wallet", "pos": [38, 300], "size": [120, 60] },
+    { "id": "web", "type": "frontend", "label": "Static Web App", "sublabel": "React + Vite", "pos": [230, 300], "size": [132, 60], "tag": "Vercel" },
+    { "id": "source", "type": "backend", "label": "ColonyDataSource", "sublabel": "single UI contract", "pos": [430, 300], "size": [144, 60] },
+    { "id": "mock", "type": "frontend", "label": "Mock Adapter", "sublabel": "deterministic demo", "pos": [430, 112], "size": [144, 60], "tag": "clearly labeled" },
+    { "id": "contract", "type": "backend", "label": "AntColony.sol", "sublabel": "Monad Testnet 10143", "pos": [660, 300], "size": [150, 60], "tag": "source of truth" },
+    { "id": "tasks", "type": "database", "label": "Per-task State", "sublabel": "tasks[taskId]", "pos": [900, 190], "size": [138, 60], "tag": "low conflict" },
+    { "id": "escrow", "type": "security", "label": "MON Settlement", "sublabel": "escrow + rewards", "pos": [900, 300], "size": [138, 60] },
+    { "id": "events", "type": "messagebus", "label": "Pheromone Events", "sublabel": "logs + receipts", "pos": [900, 410], "size": [138, 60] },
+    { "id": "explorer", "type": "external", "label": "Monad Explorer", "sublabel": "public evidence", "pos": [1080, 112], "size": [132, 60] },
+    { "id": "workers", "type": "backend", "label": "Worker Wallets", "sublabel": "Repair · Color · Story", "pos": [430, 660], "size": [156, 60], "tag": "local keys" },
+    { "id": "runner", "type": "backend", "label": "Agent Runner", "sublabel": "poll + replay + recover", "pos": [660, 660], "size": [150, 60], "tag": "Node.js + viem" },
+    { "id": "guard", "type": "security", "label": "Guard Wallet", "sublabel": "verify or refund", "pos": [900, 660], "size": [138, 60], "tag": "local key" }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "PUBLIC / Vercel static delivery", "wraps": ["web", "source", "mock"], "pad": 28 },
+    { "kind": "security-group", "label": "TRUST / Monad Testnet", "wraps": ["contract", "tasks", "escrow", "events"], "pad": 28 },
+    { "kind": "security-group", "label": "PRIVATE / Local Agent Runtime", "wraps": ["workers", "runner", "guard"], "pad": 28 }
+  ],
+  "connections": [
+    { "from": "requester", "to": "web", "label": "mission + signature", "variant": "emphasis", "labelAt": [194, 286] },
+    { "from": "web", "to": "source" },
+    { "from": "source", "to": "mock", "label": "offline demo", "variant": "dashed", "fromSide": "top", "toSide": "bottom" },
+    { "from": "source", "to": "contract", "label": "wallet + public RPC", "variant": "emphasis", "labelAt": [617, 286] },
+    { "from": "contract", "to": "tasks", "fromSide": "right", "toSide": "left", "route": "orthogonal-h" },
+    { "from": "contract", "to": "escrow" },
+    { "from": "contract", "to": "events", "fromSide": "right", "toSide": "left", "route": "orthogonal-h" },
+    { "from": "contract", "to": "explorer", "label": "transactions", "variant": "dashed", "fromSide": "top", "toSide": "bottom", "route": "orthogonal-v", "labelAt": [941, 264] },
+    { "from": "events", "to": "runner", "label": "poll + backfill", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "route": "orthogonal-v" },
+    { "from": "runner", "to": "workers", "label": "dispatch by skill", "fromSide": "left", "toSide": "right", "labelAt": [623, 646] },
+    { "from": "runner", "to": "guard", "label": "quality gate", "variant": "security" },
+    { "from": "workers", "to": "contract", "label": "claim · submit · withdraw", "variant": "emphasis", "fromSide": "top", "toSide": "bottom", "route": "orthogonal-v" },
+    { "from": "guard", "to": "contract", "label": "verify / reject", "variant": "security", "fromSide": "top", "toSide": "bottom", "route": "orthogonal-v" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "One UI, Two Truth Modes", "items": ["Mock and Live share domain types and components", "Live failures never silently fall back to Mock"] },
+    { "dot": "emerald", "title": "Monad-native Coordination", "items": ["Deterministic task IDs avoid a global counter", "Independent task writes form the Swarm Lane", "Same-task claims intentionally create the Conflict Lane"] },
+    { "dot": "rose", "title": "Key + Settlement Boundary", "items": ["Vercel never receives Worker or Guard private keys", "Verification credits claimableRewards before withdrawal", "Signed transactions are journaled and reconciled"] }
+  ]
+}

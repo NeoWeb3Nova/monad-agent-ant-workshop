@@ -1,0 +1,200 @@
+<svg viewBox="0 0 1240 900" role="img" aria-label="AntForge on Monad — System Architecture — Public requester UI, onchain coordination, and local autonomous agent wallets (architecture diagram)" width="1240" height="900" xmlns="http://www.w3.org/2000/svg"><style>@font-face { font-family: 'JetBrains Mono'; font-weight: 400; src: local('JetBrains Mono'), local('JetBrainsMono-Regular'); }
+@font-face { font-family: 'JetBrains Mono'; font-weight: 500; src: local('JetBrains Mono'), local('JetBrainsMono-Regular'); }
+@font-face { font-family: 'JetBrains Mono'; font-weight: 600; src: local('JetBrains Mono'), local('JetBrainsMono-Regular'); }
+@font-face { font-family: 'JetBrains Mono'; font-weight: 700; src: local('JetBrains Mono'), local('JetBrainsMono-Regular'); }
+svg { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'DejaVu Sans Mono', 'Liberation Mono', 'Noto Sans Mono CJK SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', monospace; }
+:root, [data-theme="dark"] { --bg: #020617; --grid: #1e293b; --text: #ffffff; --text-muted: #94a3b8; --text-dim: #475569; --text-faint: #7d8da1; --panel: rgba(15, 23, 42, 0.5); --panel-border: #1e293b; --lane-fill: rgba(15, 23, 42, 0.22); --lane-stroke: #334155; --arrow: #64748b; --arrow-emphasis: #34d399; --mask: #0f172a; --frontend-fill: rgba(8, 51, 68, 0.4); --frontend-stroke: #22d3ee; --backend-fill: rgba(6, 78, 59, 0.4); --backend-stroke: #34d399; --database-fill: rgba(76, 29, 149, 0.4); --database-stroke: #a78bfa; --cloud-fill: rgba(120, 53, 15, 0.3); --cloud-stroke: #fbbf24; --security-fill: rgba(136, 19, 55, 0.4); --security-stroke: #fb7185; --messagebus-fill: rgba(251, 146, 60, 0.3); --messagebus-stroke: #fb923c; --external-fill: rgba(30, 41, 59, 0.5); --external-stroke: #94a3b8; --toolbar-bg: rgba(15, 23, 42, 0.8); --toolbar-border: #334155; --toolbar-text: #e2e8f0; --toolbar-hover: rgba(15, 23, 42, 0.95); --toolbar-menu-bg: #0f172a; }
+[data-theme="light"] { --bg: #f8fafc; --grid: #e2e8f0; --text: #0f172a; --text-muted: #64748b; --text-dim: #94a3b8; --text-faint: #64748b; --panel: #ffffff; --panel-border: #e2e8f0; --lane-fill: rgba(248, 250, 252, 0.65); --lane-stroke: #cbd5e1; --arrow: #94a3b8; --arrow-emphasis: #059669; --mask: #ffffff; --frontend-fill: rgba(34, 211, 238, 0.15); --frontend-stroke: #0891b2; --backend-fill: rgba(52, 211, 153, 0.18); --backend-stroke: #059669; --database-fill: rgba(167, 139, 250, 0.2); --database-stroke: #7c3aed; --cloud-fill: rgba(251, 191, 36, 0.18); --cloud-stroke: #d97706; --security-fill: rgba(251, 113, 133, 0.15); --security-stroke: #e11d48; --messagebus-fill: rgba(251, 146, 60, 0.15); --messagebus-stroke: #ea580c; --external-fill: rgba(148, 163, 184, 0.18); --external-stroke: #64748b; --toolbar-bg: rgba(255, 255, 255, 0.92); --toolbar-border: #cbd5e1; --toolbar-text: #334155; --toolbar-hover: #ffffff; --toolbar-menu-bg: #ffffff; }
+svg { width: 100%; min-width: min(900px, 100%); display: block; }
+.c-grid { stroke: var(--grid); fill: none; }
+.c-mask { fill: var(--mask); stroke: none; }
+.c-frontend { fill: var(--frontend-fill); stroke: var(--frontend-stroke); }
+.c-backend { fill: var(--backend-fill); stroke: var(--backend-stroke); }
+.c-database { fill: var(--database-fill); stroke: var(--database-stroke); }
+.c-cloud { fill: var(--cloud-fill); stroke: var(--cloud-stroke); }
+.c-security { fill: var(--security-fill); stroke: var(--security-stroke); }
+.c-messagebus { fill: var(--messagebus-fill); stroke: var(--messagebus-stroke); }
+.c-external { fill: var(--external-fill); stroke: var(--external-stroke); }
+.t-primary { fill: var(--text); }
+.t-muted { fill: var(--text-muted); }
+.t-dim { fill: var(--text-dim); }
+.t-frontend { fill: var(--frontend-stroke); }
+.t-backend { fill: var(--backend-stroke); }
+.t-database { fill: var(--database-stroke); }
+.t-cloud { fill: var(--cloud-stroke); }
+.t-security { fill: var(--security-stroke); }
+.t-messagebus { fill: var(--messagebus-stroke); }
+.t-external { fill: var(--external-stroke); }
+.a-default { stroke: var(--arrow); fill: none; }
+.a-emphasis { stroke: var(--arrow-emphasis); fill: none; }
+.a-security { stroke: var(--security-stroke); fill: none; stroke-dasharray: 5, 5; }
+.a-dashed { stroke: var(--database-stroke); fill: none; stroke-dasharray: 4, 4; }
+.m-default { fill: var(--arrow); }
+.m-emphasis { fill: var(--arrow-emphasis); }
+.m-security { fill: var(--security-stroke); }
+.m-dashed { fill: var(--database-stroke); }
+.c-security-group { fill: transparent; stroke: var(--security-stroke); stroke-dasharray: 4, 4; }
+.c-region { fill: rgba(251, 191, 36, 0.05); stroke: var(--cloud-stroke); stroke-dasharray: 8, 4; }
+.c-lane { fill: var(--lane-fill); stroke: var(--lane-stroke); stroke-dasharray: 6, 6; }
+svg[data-animation="trace"] [data-animate="edge"] { stroke-dasharray: 10, 8; stroke-dashoffset: 54; animation-duration: 2.4s; animation-timing-function: linear; animation-iteration-count: infinite; animation-direction: normal; animation-fill-mode: none; animation-play-state: running; animation-name: archify-edge-flow; animation-timeline: auto; animation-range: normal; animation-delay: calc(var(--step, 0) * 160ms); }
+svg[data-animation="trace"] [data-animate="node"] { transform-box: fill-box; transform-origin: center center; animation-duration: 3.6s; animation-timing-function: ease-in-out; animation-iteration-count: infinite; animation-direction: normal; animation-fill-mode: none; animation-play-state: running; animation-name: archify-node-pulse; animation-timeline: auto; animation-range: normal; animation-delay: calc(var(--step, 0) * 160ms); }
+:root, svg { --bg: #020617; --grid: #1e293b; --text: #ffffff; --text-muted: #94a3b8; --text-dim: #475569; --text-faint: #7d8da1; --panel: rgba(15, 23, 42, 0.5); --panel-border: #1e293b; --lane-fill: rgba(15, 23, 42, 0.22); --lane-stroke: #334155; --arrow: #64748b; --arrow-emphasis: #34d399; --mask: #0f172a; --frontend-fill: rgba(8, 51, 68, 0.4); --frontend-stroke: #22d3ee; --backend-fill: rgba(6, 78, 59, 0.4); --backend-stroke: #34d399; --database-fill: rgba(76, 29, 149, 0.4); --database-stroke: #a78bfa; --cloud-fill: rgba(120, 53, 15, 0.3); --cloud-stroke: #fbbf24; --security-fill: rgba(136, 19, 55, 0.4); --security-stroke: #fb7185; --messagebus-fill: rgba(251, 146, 60, 0.3); --messagebus-stroke: #fb923c; --external-fill: rgba(30, 41, 59, 0.5); --external-stroke: #94a3b8; --toolbar-bg: rgba(15, 23, 42, 0.8); --toolbar-border: #334155; --toolbar-text: #e2e8f0; --toolbar-hover: rgba(15, 23, 42, 0.95); --toolbar-menu-bg: #0f172a; }
+@media (prefers-color-scheme: light) { :root, svg { --bg: #f8fafc; --grid: #e2e8f0; --text: #0f172a; --text-muted: #64748b; --text-dim: #94a3b8; --text-faint: #64748b; --panel: #ffffff; --panel-border: #e2e8f0; --lane-fill: rgba(248, 250, 252, 0.65); --lane-stroke: #cbd5e1; --arrow: #94a3b8; --arrow-emphasis: #059669; --mask: #ffffff; --frontend-fill: rgba(34, 211, 238, 0.15); --frontend-stroke: #0891b2; --backend-fill: rgba(52, 211, 153, 0.18); --backend-stroke: #059669; --database-fill: rgba(167, 139, 250, 0.2); --database-stroke: #7c3aed; --cloud-fill: rgba(251, 191, 36, 0.18); --cloud-stroke: #d97706; --security-fill: rgba(251, 113, 133, 0.15); --security-stroke: #e11d48; --messagebus-fill: rgba(251, 146, 60, 0.15); --messagebus-stroke: #ea580c; --external-fill: rgba(148, 163, 184, 0.18); --external-stroke: #64748b; --toolbar-bg: rgba(255, 255, 255, 0.92); --toolbar-border: #cbd5e1; --toolbar-text: #334155; --toolbar-hover: #ffffff; --toolbar-menu-bg: #ffffff; } }
+svg[data-theme="light"] { --bg: #f8fafc; --grid: #e2e8f0; --text: #0f172a; --text-muted: #64748b; --text-dim: #94a3b8; --text-faint: #64748b; --panel: #ffffff; --panel-border: #e2e8f0; --lane-fill: rgba(248, 250, 252, 0.65); --lane-stroke: #cbd5e1; --arrow: #94a3b8; --arrow-emphasis: #059669; --mask: #ffffff; --frontend-fill: rgba(34, 211, 238, 0.15); --frontend-stroke: #0891b2; --backend-fill: rgba(52, 211, 153, 0.18); --backend-stroke: #059669; --database-fill: rgba(167, 139, 250, 0.2); --database-stroke: #7c3aed; --cloud-fill: rgba(251, 191, 36, 0.18); --cloud-stroke: #d97706; --security-fill: rgba(251, 113, 133, 0.15); --security-stroke: #e11d48; --messagebus-fill: rgba(251, 146, 60, 0.15); --messagebus-stroke: #ea580c; --external-fill: rgba(148, 163, 184, 0.18); --external-stroke: #64748b; --toolbar-bg: rgba(255, 255, 255, 0.92); --toolbar-border: #cbd5e1; --toolbar-text: #334155; --toolbar-hover: #ffffff; --toolbar-menu-bg: #ffffff; }
+svg[data-theme="dark"] { --bg: #020617; --grid: #1e293b; --text: #ffffff; --text-muted: #94a3b8; --text-dim: #475569; --text-faint: #7d8da1; --panel: rgba(15, 23, 42, 0.5); --panel-border: #1e293b; --lane-fill: rgba(15, 23, 42, 0.22); --lane-stroke: #334155; --arrow: #64748b; --arrow-emphasis: #34d399; --mask: #0f172a; --frontend-fill: rgba(8, 51, 68, 0.4); --frontend-stroke: #22d3ee; --backend-fill: rgba(6, 78, 59, 0.4); --backend-stroke: #34d399; --database-fill: rgba(76, 29, 149, 0.4); --database-stroke: #a78bfa; --cloud-fill: rgba(120, 53, 15, 0.3); --cloud-stroke: #fbbf24; --security-fill: rgba(136, 19, 55, 0.4); --security-stroke: #fb7185; --messagebus-fill: rgba(251, 146, 60, 0.3); --messagebus-stroke: #fb923c; --external-fill: rgba(30, 41, 59, 0.5); --external-stroke: #94a3b8; --toolbar-bg: rgba(15, 23, 42, 0.8); --toolbar-border: #334155; --toolbar-text: #e2e8f0; --toolbar-hover: rgba(15, 23, 42, 0.95); --toolbar-menu-bg: #0f172a; }
+rect.c-bg-rect { fill: var(--bg); }
+</style><rect width="100%" height="100%" class="c-bg-rect"/>
+        <!-- Definitions -->
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="m-default"/>
+          </marker>
+          <marker id="arrowhead-emphasis" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="m-emphasis"/>
+          </marker>
+          <marker id="arrowhead-security" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="m-security"/>
+          </marker>
+          <marker id="arrowhead-dashed" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="m-dashed"/>
+          </marker>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" class="c-grid" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+
+        <!-- Background Grid -->
+        <rect width="100%" height="100%" fill="url(#grid)"/>
+
+        <!-- Boundaries (behind everything) -->
+        <rect x="202" y="84" width="400" height="296" rx="12" class="c-region" stroke-width="1"/>
+        <text x="210" y="102" class="t-cloud" font-size="9" font-weight="600">PUBLIC / Vercel static delivery</text>
+
+        <rect x="632" y="162" width="434" height="328" rx="8" class="c-security-group" stroke-width="1"/>
+        <text x="640" y="180" class="t-security" font-size="9" font-weight="600">TRUST / Monad Testnet</text>
+
+        <rect x="402" y="632" width="664" height="108" rx="8" class="c-security-group" stroke-width="1"/>
+        <text x="410" y="650" class="t-security" font-size="9" font-weight="600">PRIVATE / Local Agent Runtime</text>
+
+        <!-- Connection paths (before components for correct z-order) -->
+        <path d="M 158 330 L 230 330" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path d="M 362 330 L 430 330" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path d="M 502 300 L 502 172" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+        <path d="M 574 330 L 660 330" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path d="M 810 330 L 847 330 Q 855 330 855 322 L 855 228 Q 855 220 863 220 L 900 220" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path d="M 810 330 L 900 330" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path d="M 810 330 L 847 330 Q 855 330 855 338 L 855 432 Q 855 440 863 440 L 900 440" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path d="M 735 300 L 735 244 Q 735 236 743 236 L 1138 236 Q 1146 236 1146 228 L 1146 172" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+        <path d="M 969 470 L 969 557 Q 969 565 961 565 L 743 565 Q 735 565 735 573 L 735 660" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+        <path d="M 660 690 L 586 690" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path d="M 810 690 L 900 690" class="a-security" stroke-width="1.5" marker-end="url(#arrowhead-security)"/>
+        <path d="M 508 660 L 508 518 Q 508 510 516 510 L 727 510 Q 735 510 735 502 L 735 360" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path d="M 969 660 L 969 518 Q 969 510 961 510 L 743 510 Q 735 510 735 502 L 735 360" class="a-security" stroke-width="1.5" marker-end="url(#arrowhead-security)"/>
+
+        <!-- Components -->
+        <rect x="38" y="300" width="120" height="60" rx="6" class="c-mask"/>
+        <rect x="38" y="300" width="120" height="60" rx="6" class="c-external" stroke-width="1.5"/>
+        <text x="98" y="328" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Requester</text>
+        <text x="98" y="344" class="t-muted" font-size="9" text-anchor="middle">injected wallet</text>
+
+        <rect x="230" y="300" width="132" height="60" rx="6" class="c-mask"/>
+        <rect x="230" y="300" width="132" height="60" rx="6" class="c-frontend" stroke-width="1.5"/>
+        <text x="296" y="328" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Static Web App</text>
+        <text x="296" y="344" class="t-muted" font-size="9" text-anchor="middle">React + Vite</text>
+        <text x="296" y="352" class="t-frontend" font-size="7" text-anchor="middle">Vercel</text>
+
+        <rect x="430" y="300" width="144" height="60" rx="6" class="c-mask"/>
+        <rect x="430" y="300" width="144" height="60" rx="6" class="c-backend" stroke-width="1.5"/>
+        <text x="502" y="328" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">ColonyDataSource</text>
+        <text x="502" y="344" class="t-muted" font-size="9" text-anchor="middle">single UI contract</text>
+
+        <rect x="430" y="112" width="144" height="60" rx="6" class="c-mask"/>
+        <rect x="430" y="112" width="144" height="60" rx="6" class="c-frontend" stroke-width="1.5"/>
+        <text x="502" y="140" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Mock Adapter</text>
+        <text x="502" y="156" class="t-muted" font-size="9" text-anchor="middle">deterministic demo</text>
+        <text x="502" y="164" class="t-frontend" font-size="7" text-anchor="middle">clearly labeled</text>
+
+        <rect x="660" y="300" width="150" height="60" rx="6" class="c-mask"/>
+        <rect x="660" y="300" width="150" height="60" rx="6" class="c-backend" stroke-width="1.5"/>
+        <text x="735" y="328" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">AntColony.sol</text>
+        <text x="735" y="344" class="t-muted" font-size="9" text-anchor="middle">Monad Testnet 10143</text>
+        <text x="735" y="352" class="t-backend" font-size="7" text-anchor="middle">source of truth</text>
+
+        <rect x="900" y="190" width="138" height="60" rx="6" class="c-mask"/>
+        <rect x="900" y="190" width="138" height="60" rx="6" class="c-database" stroke-width="1.5"/>
+        <text x="969" y="218" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Per-task State</text>
+        <text x="969" y="234" class="t-muted" font-size="9" text-anchor="middle">tasks[taskId]</text>
+        <text x="969" y="242" class="t-database" font-size="7" text-anchor="middle">low conflict</text>
+
+        <rect x="900" y="300" width="138" height="60" rx="6" class="c-mask"/>
+        <rect x="900" y="300" width="138" height="60" rx="6" class="c-security" stroke-width="1.5"/>
+        <text x="969" y="328" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">MON Settlement</text>
+        <text x="969" y="344" class="t-muted" font-size="9" text-anchor="middle">escrow + rewards</text>
+
+        <rect x="900" y="410" width="138" height="60" rx="6" class="c-mask"/>
+        <rect x="900" y="410" width="138" height="60" rx="6" class="c-messagebus" stroke-width="1.5"/>
+        <text x="969" y="438" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Pheromone Events</text>
+        <text x="969" y="454" class="t-muted" font-size="9" text-anchor="middle">logs + receipts</text>
+
+        <rect x="1080" y="112" width="132" height="60" rx="6" class="c-mask"/>
+        <rect x="1080" y="112" width="132" height="60" rx="6" class="c-external" stroke-width="1.5"/>
+        <text x="1146" y="140" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Monad Explorer</text>
+        <text x="1146" y="156" class="t-muted" font-size="9" text-anchor="middle">public evidence</text>
+
+        <rect x="430" y="660" width="156" height="60" rx="6" class="c-mask"/>
+        <rect x="430" y="660" width="156" height="60" rx="6" class="c-backend" stroke-width="1.5"/>
+        <text x="508" y="688" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Worker Wallets</text>
+        <text x="508" y="704" class="t-muted" font-size="9" text-anchor="middle">Repair · Color · Story</text>
+        <text x="508" y="712" class="t-backend" font-size="7" text-anchor="middle">local keys</text>
+
+        <rect x="660" y="660" width="150" height="60" rx="6" class="c-mask"/>
+        <rect x="660" y="660" width="150" height="60" rx="6" class="c-backend" stroke-width="1.5"/>
+        <text x="735" y="688" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Agent Runner</text>
+        <text x="735" y="704" class="t-muted" font-size="9" text-anchor="middle">poll + replay + recover</text>
+        <text x="735" y="712" class="t-backend" font-size="7" text-anchor="middle">Node.js + viem</text>
+
+        <rect x="900" y="660" width="138" height="60" rx="6" class="c-mask"/>
+        <rect x="900" y="660" width="138" height="60" rx="6" class="c-security" stroke-width="1.5"/>
+        <text x="969" y="688" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Guard Wallet</text>
+        <text x="969" y="704" class="t-muted" font-size="9" text-anchor="middle">verify or refund</text>
+        <text x="969" y="712" class="t-security" font-size="7" text-anchor="middle">local key</text>
+
+        <!-- Connection labels -->
+        <rect x="143.4" y="276" width="101.2" height="14" rx="3" class="c-mask"/>
+        <text x="194" y="286" class="t-backend" font-size="8" text-anchor="middle">mission + signature</text>
+
+        <rect x="468.2" y="280" width="67.6" height="14" rx="3" class="c-mask"/>
+        <text x="502" y="290" class="t-messagebus" font-size="8" text-anchor="middle">offline demo</text>
+        <rect x="566.4" y="276" width="101.2" height="14" rx="3" class="c-mask"/>
+        <text x="617" y="286" class="t-backend" font-size="8" text-anchor="middle">wallet + public RPC</text>
+
+
+
+        <rect x="907.2" y="254" width="67.6" height="14" rx="3" class="c-mask"/>
+        <text x="941" y="264" class="t-messagebus" font-size="8" text-anchor="middle">transactions</text>
+        <rect x="811" y="545" width="82" height="14" rx="3" class="c-mask"/>
+        <text x="852" y="555" class="t-messagebus" font-size="8" text-anchor="middle">poll + backfill</text>
+        <rect x="577.2" y="636" width="91.6" height="14" rx="3" class="c-mask"/>
+        <text x="623" y="646" class="t-muted" font-size="8" text-anchor="middle">dispatch by skill</text>
+        <rect x="821.2" y="670" width="67.6" height="14" rx="3" class="c-mask"/>
+        <text x="855" y="680" class="t-security" font-size="8" text-anchor="middle">quality gate</text>
+        <rect x="556.5" y="490" width="130" height="14" rx="3" class="c-mask"/>
+        <text x="621.5" y="500" class="t-backend" font-size="8" text-anchor="middle">claim · submit · withdraw</text>
+        <rect x="811" y="490" width="82" height="14" rx="3" class="c-mask"/>
+        <text x="852" y="500" class="t-security" font-size="8" text-anchor="middle">verify / reject</text>
+
+        <!-- Legend -->
+        <text x="40" y="871" class="t-primary" font-size="9" font-weight="600">Legend</text>
+        <rect x="40" y="876" width="14" height="9" rx="2" class="c-external" stroke-width="1"/>
+        <text x="60" y="884" class="t-muted" font-size="8">External</text>
+        <rect x="138" y="876" width="14" height="9" rx="2" class="c-frontend" stroke-width="1"/>
+        <text x="158" y="884" class="t-muted" font-size="8">Frontend</text>
+        <rect x="236" y="876" width="14" height="9" rx="2" class="c-backend" stroke-width="1"/>
+        <text x="256" y="884" class="t-muted" font-size="8">Backend</text>
+        <rect x="329" y="876" width="14" height="9" rx="2" class="c-database" stroke-width="1"/>
+        <text x="349" y="884" class="t-muted" font-size="8">Database</text>
+        <rect x="427" y="876" width="14" height="9" rx="2" class="c-security" stroke-width="1"/>
+        <text x="447" y="884" class="t-muted" font-size="8">Security</text>
+        <rect x="525" y="876" width="14" height="9" rx="2" class="c-messagebus" stroke-width="1"/>
+        <text x="545" y="884" class="t-muted" font-size="8">Message bus</text>
+      </svg>

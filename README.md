@@ -113,24 +113,11 @@ See [`docs/04-monad-testnet-evidence.md`](docs/04-monad-testnet-evidence.md) for
 
 ## Architecture
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│ web/ · React 19 + Vite 8 + TypeScript + wagmi + viem        │
-│ MockColonyDataSource │ MonadColonyDataSource                 │
-│ mission UI · wallet writes · event replay · Explorer links   │
-└────────────────────────────┬─────────────────────────────────┘
-                             │ public RPC + Requester wallet
-┌────────────────────────────▼─────────────────────────────────┐
-│ AntColony.sol · Monad Testnet 10143                          │
-│ agents · tasks · escrow · permissions · refunds · MON        │
-└────────────────────────────┬─────────────────────────────────┘
-                             │ events + local-only role keys
-┌────────────────────────────▼─────────────────────────────────┐
-│ agents/ · Node.js + TypeScript + viem                        │
-│ Repair · Color · Story · Guard · Rogue                       │
-│ backfill · polling · recovery journal · reconciliation       │
-└──────────────────────────────────────────────────────────────┘
-```
+[![AntForge system architecture](docs/architecture/antforge-system.svg)](docs/architecture/antforge-system.html)
+
+The public Vercel app and the private local Agent Runtime are peer clients of `AntColony.sol`. The contract is the Live source of truth; Vercel never receives Worker or Guard keys. Each task advances through its own `tasks[taskId]` slot, while same-task claim races remain intentionally conflicting.
+
+Detailed diagrams: [Live settlement sequence](docs/architecture/antforge-live-settlement.svg) · [Task and reward lifecycle](docs/architecture/antforge-task-lifecycle.svg) · [editable diagram sources](docs/architecture/)
 
 | Layer | Technology | Responsibility |
 | --- | --- | --- |

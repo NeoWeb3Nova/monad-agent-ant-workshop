@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "AntForge Live Settlement Sequence",
+    "subtitle": "Requester escrow, autonomous Worker execution, Guard verification, payout, and honest failure evidence",
+    "output": "antforge-live-settlement.html",
+    "viewBox": [920, 1100]
+  },
+  "participants": [
+    { "id": "requester", "type": "external", "label": "Requester", "sublabel": "wallet" },
+    { "id": "web", "type": "frontend", "label": "Web App", "sublabel": "wagmi" },
+    { "id": "contract", "type": "backend", "label": "AntColony", "sublabel": "Monad" },
+    { "id": "worker", "type": "backend", "label": "Worker", "sublabel": "local wallet" },
+    { "id": "guard", "type": "security", "label": "Guard", "sublabel": "local wallet" },
+    { "id": "rogue", "type": "security", "label": "Rogue Ant", "sublabel": "wrong skill" },
+    { "id": "explorer", "type": "external", "label": "Explorer", "sublabel": "evidence" }
+  ],
+  "segments": [
+    { "from": 150, "to": 300, "label": "01 / ESCROW + TASK EVENTS" },
+    { "from": 315, "to": 625, "label": "02 / AUTONOMOUS EXECUTION + SETTLEMENT" },
+    { "from": 640, "to": 785, "label": "03 / EVIDENCE REPLAY" },
+    { "from": 805, "to": 1005, "label": "04 / HONEST FAILURE PATHS" }
+  ],
+  "messages": [
+    { "from": "requester", "to": "web", "y": 180, "label": "Release the swarm", "variant": "default" },
+    { "from": "web", "to": "contract", "y": 225, "label": "createColony + 0.003 MON", "variant": "emphasis" },
+    { "from": "contract", "to": "worker", "y": 275, "label": "TaskCreated logs", "variant": "dashed", "note": "Runner polls and backfills logs in bounded block ranges." },
+    { "from": "worker", "to": "contract", "y": 340, "label": "claimTask", "variant": "emphasis" },
+    { "from": "contract", "to": "worker", "y": 382, "label": "TaskClaimed receipt", "variant": "return" },
+    { "from": "worker", "to": "contract", "y": 430, "label": "submitResult(outputHash, URI)", "variant": "emphasis" },
+    { "from": "contract", "to": "guard", "y": 478, "label": "ResultSubmitted log", "variant": "dashed" },
+    { "from": "guard", "to": "contract", "y": 526, "label": "verifyResult", "variant": "security" },
+    { "from": "contract", "to": "worker", "y": 570, "label": "RewardCredited", "variant": "dashed" },
+    { "from": "worker", "to": "contract", "y": 615, "label": "withdrawReward", "variant": "emphasis" },
+    { "from": "contract", "to": "worker", "y": 665, "label": "native MON transfer", "variant": "return" },
+    { "from": "web", "to": "contract", "y": 710, "label": "replay logs + receipts", "variant": "default" },
+    { "from": "contract", "to": "web", "y": 750, "label": "canonical Live snapshot", "variant": "return" },
+    { "from": "web", "to": "explorer", "y": 790, "label": "open transaction proof", "variant": "dashed" },
+    { "from": "rogue", "to": "contract", "y": 845, "label": "simulate claimTask", "variant": "security" },
+    { "from": "contract", "to": "rogue", "y": 890, "label": "SkillMismatch — no broadcast", "variant": "return", "note": "No fabricated transaction hash is shown because no transaction occurred." },
+    { "from": "worker", "to": "contract", "y": 945, "label": "competing claimTask", "variant": "security" },
+    { "from": "contract", "to": "worker", "y": 990, "label": "TaskNotOpen reverted receipt", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "web", "from": 175, "to": 795, "type": "frontend" },
+    { "participant": "contract", "from": 220, "to": 1000, "type": "backend" },
+    { "participant": "worker", "from": 270, "to": 675, "type": "backend" },
+    { "participant": "guard", "from": 473, "to": 535, "type": "security" },
+    { "participant": "rogue", "from": 840, "to": 900, "type": "security" },
+    { "participant": "explorer", "from": 785, "to": 815, "type": "external" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Real Vertical Slice", "items": ["Every successful write is signed by its role wallet", "The contract is authoritative for task and payout state", "Worker withdrawal transfers native Testnet MON"] },
+    { "dot": "orange", "title": "Event-driven Recovery", "items": ["Runner backfills TaskCreated logs before polling", "Pending signed transactions are journaled by wallet", "Receipts reconcile before the next nonce is used"] },
+    { "dot": "rose", "title": "Honest Evidence", "items": ["SkillMismatch stops before broadcast", "TaskNotOpen is preserved as a reverted receipt", "Mock output never impersonates a Live transaction"] }
+  ]
+}

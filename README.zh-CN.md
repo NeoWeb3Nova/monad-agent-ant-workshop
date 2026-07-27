@@ -113,24 +113,11 @@ AntForge 不发布未经测量的 TPS 或 finality 数字；“快速反馈”�
 
 ## Architecture｜架构
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│ web/ · React 19 + Vite 8 + TypeScript + wagmi + viem        │
-│ MockColonyDataSource │ MonadColonyDataSource                 │
-│ mission UI · wallet writes · event replay · Explorer links   │
-└────────────────────────────┬─────────────────────────────────┘
-                             │ public RPC + Requester wallet
-┌────────────────────────────▼─────────────────────────────────┐
-│ AntColony.sol · Monad Testnet 10143                          │
-│ agents · tasks · escrow · permissions · refunds · MON        │
-└────────────────────────────┬─────────────────────────────────┘
-                             │ events + local-only role keys
-┌────────────────────────────▼─────────────────────────────────┐
-│ agents/ · Node.js + TypeScript + viem                        │
-│ Repair · Color · Story · Guard · Rogue                       │
-│ backfill · polling · recovery journal · reconciliation       │
-└──────────────────────────────────────────────────────────────┘
-```
+[![AntForge 系统架构](docs/architecture/antforge-system.svg)](docs/architecture/antforge-system.html)
+
+Vercel 公共前端与本地私有 Agent Runtime 是 `AntColony.sol` 的两个对等客户端。合约是 Live 模式的权威数据源；Vercel 永远不会接收 Worker 或 Guard 私钥。每项任务通过独立的 `tasks[taskId]` 存储槽推进，而同一任务的领取竞争则被有意保留为冲突路径。
+
+详细图表：[Live 结算时序](docs/architecture/antforge-live-settlement.svg) · [任务与奖励生命周期](docs/architecture/antforge-task-lifecycle.svg) · [可编辑图表源文件](docs/architecture/)
 
 | 层 | 技术 | 职责 |
 | --- | --- | --- |

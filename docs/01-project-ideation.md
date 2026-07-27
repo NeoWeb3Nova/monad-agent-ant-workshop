@@ -257,9 +257,9 @@ React + Vite Static UI
 │ └── Explorer Evidence                               │
 │          │                                          │
 │          ▼                                          │
-│ ColonyGateway interface                             │
-│ ├── MockColonyGateway                               │
-│ └── MonadColonyGateway                             │
+│ ColonyDataSource interface                          │
+│ ├── MockColonyDataSource                            │
+│ └── MonadColonyDataSource                           │
 └──────────────────┬──────────────────────────────────┘
                    │ wagmi / viem / RPC
                    ▼
@@ -289,7 +289,7 @@ React + Vite Static UI
 
 | 模式 | 权威来源 |
 | --- | --- |
-| Mock | 浏览器内 `MockColonyGateway` |
+| Mock | 浏览器内 `MockColonyDataSource` |
 | Live | Monad Testnet 合约、回执和事件 |
 | Agent Output | 本地 Agent Runner 生成内容，链上保存哈希和事件 URI |
 | 部署证据 | `deployments/monad-testnet.json` |
@@ -746,19 +746,21 @@ AGENT_EXECUTION_MODE=mock
 Mock 和 Live 共享 `Agent`、`Task`、`Colony`、`TaskStatus`、`ColonyEvent` 和 UI。
 
 ```typescript
-interface ColonyGateway {
-  getAgents(): Promise<Agent[]>;
-  getColony(colonyId: Hex): Promise<Colony>;
-  createColony(input: CreateColonyInput): Promise<ChainActionResult>;
-  watchColony(colonyId: Hex, onEvent: (event: ColonyEvent) => void): () => void;
+interface ColonyDataSource {
+  readonly mode: DataMode;
+  getSnapshot(): ColonySnapshot;
+  subscribe(listener: () => void): () => void;
+  releaseSwarm(goal: string): Promise<void>;
+  refresh(): Promise<void>;
+  reset(): void;
 }
 ```
 
 Adapters：
 
 ```text
-MockColonyGateway
-MonadColonyGateway
+MockColonyDataSource
+MonadColonyDataSource
 ```
 
 组件中不散落 `if (mock)`。
@@ -884,7 +886,7 @@ npm run build
 → TypeScript target 设置为 ES2020
 → 安装 Tailwind / wagmi / viem / TanStack Query
 → 单页布局
-→ MockColonyGateway
+→ MockColonyDataSource
 → Mock 闭环
 ```
 
@@ -892,7 +894,7 @@ npm run build
 
 ```text
 接入 ABI 和地址
-→ MonadColonyGateway
+→ MonadColonyDataSource
 → Node.js Agent Runner
 → 信息素事件监听
 → 注册 Agent 钱包

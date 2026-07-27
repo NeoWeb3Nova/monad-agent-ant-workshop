@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "AntForge Task + Reward Lifecycle",
+    "subtitle": "Exact AntColony task states with verification, refund, and pull-payment outcomes",
+    "output": "antforge-task-lifecycle.html",
+    "viewBox": [980, 700]
+  },
+  "lanes": [
+    { "id": "main", "label": "Primary task + payout path" },
+    { "id": "exceptions", "label": "Guard rejection + deadline cancellation" },
+    { "id": "terminal", "label": "Terminal outcomes" }
+  ],
+  "states": [
+    { "id": "open", "type": "start", "label": "Open", "sublabel": "reward escrowed", "lane": "main", "col": 0, "step": "01", "tag": "TaskStatus" },
+    { "id": "claimed", "type": "active", "label": "Claimed", "sublabel": "skill matched", "lane": "main", "col": 1, "step": "02", "tag": "TaskStatus" },
+    { "id": "submitted", "type": "decision", "label": "Submitted", "sublabel": "output hash", "lane": "main", "col": 2, "step": "03", "tag": "Guard gate" },
+    { "id": "settled", "type": "success", "label": "Settled", "sublabel": "reward credited", "lane": "main", "col": 3, "step": "04", "tag": "TaskStatus" },
+    { "id": "withdrawn", "type": "success", "label": "MON Withdrawn", "sublabel": "pull payment", "lane": "main", "col": 4, "step": "05", "tag": "separate tx" },
+    { "id": "rejected", "type": "failure", "label": "Rejected", "sublabel": "Guard refund", "lane": "exceptions", "col": 1, "tag": "TaskStatus" },
+    { "id": "cancelled", "type": "failure", "label": "Cancelled", "sublabel": "deadline passed", "lane": "exceptions", "col": 2, "tag": "TaskStatus" },
+    { "id": "guardRefund", "type": "external", "label": "Requester Refunded", "sublabel": "rejected task reward", "lane": "terminal", "col": 1, "tag": "native MON" },
+    { "id": "expiryRefund", "type": "external", "label": "Requester Refunded", "sublabel": "expired task reward", "lane": "terminal", "col": 2, "tag": "native MON" }
+  ],
+  "transitions": [
+    { "from": "submitted", "to": "rejected", "variant": "security", "fromSide": "bottom", "toSide": "top", "route": "drop", "channelY": 235 },
+    { "from": "submitted", "to": "cancelled", "variant": "security", "fromSide": "bottom", "toSide": "top", "route": "drop", "channelY": 210 },
+    { "from": "rejected", "to": "guardRefund", "variant": "security", "fromSide": "bottom", "toSide": "top", "route": "straight" },
+    { "from": "cancelled", "to": "expiryRefund", "variant": "security", "fromSide": "bottom", "toSide": "top", "route": "straight" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Happy Path", "items": ["Open -> Claimed -> Submitted -> Settled is the exact task state rail", "verifyResult credits claimableRewards without transferring funds", "withdrawReward is a separate nonReentrant pull-payment transaction"] },
+    { "dot": "rose", "title": "Refund Paths", "items": ["Guard rejection changes Submitted -> Rejected and refunds that task", "Requester cancellation accepts Open, Claimed, or Submitted only after deadline", "Settled, Rejected, and Cancelled are terminal task states"] },
+    { "dot": "cyan", "title": "Parallelism Boundary", "items": ["Each task progresses through its own tasks[taskId] slot", "Different tasks avoid a shared global task counter", "Only the same-task claim race is intentionally conflicting"] }
+  ]
+}

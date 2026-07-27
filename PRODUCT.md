@@ -24,7 +24,9 @@ The primary scene is a 1440×900 or 1920×1080 desktop browser during a three-mi
 
 ## Capabilities and Constraints
 
-Mock and Live share `ColonySnapshot` and one page. Live failure never silently falls back to Mock. Contracts, transactions, blocks, balances, Agent identities, and performance evidence must never be fabricated. The MVP exposes Queen, Repair, Color, Story, Guard, Treasury, Swarm Lane, Skill Guard, and Conflict Lane. Contracts and Agent Runner behavior are outside visual-redesign scope.
+Mock and Live share `ColonySnapshot` and one page. Clearly labelled synthetic Mock values are allowed for a deterministic demo, but they may never be presented as Monad Testnet facts or evidence. Live evidence—including contracts, transactions, blocks, balances, Agent identities, and performance claims—may never be fabricated, and Live failure never silently falls back to Mock. Contracts and Agent Runner behavior are outside visual-redesign scope.
+
+The required UI inventory is six nodes (Queen, Repair, Color, Story, Guard, Treasury), five metrics (Network, Tasks settled, Escrow budget, Last inclusion, Latest block), five workflow steps (Goal, Split tasks, Ant agents, Verify, Settle), and three proof lanes (Swarm Lane, Skill Guard, Conflict Lane). All values and states derive from `ColonySnapshot` or existing helpers. Loading is labelled without inventing values; empty data uses an explicit unavailable/no-events state and omits unsupported links; errors identify the real wallet, RPC, or contract failure and offer retry without implying success.
 
 ## Brand Commitments
 
@@ -32,14 +34,14 @@ The product name is AntForge on Monad / Agent 蚂蚁工坊. The underground ant-
 
 ## Evidence on Hand
 
-Real deployment and interaction evidence lives in `deployments/monad-testnet.json` and `docs/04-monad-testnet-evidence.md`. The frontend reads the deployed contract through the existing Monad adapter. The reference colony image comes from the user-owned `NeoWeb3Nova/frontend` repository. No unverified network-wide activity or reward totals exist and none may be invented.
+Real deployment and interaction evidence lives in `deployments/monad-testnet.json` and `docs/04-monad-testnet-evidence.md`. The frontend reads the deployed contract through the existing Monad adapter. The colony artwork source is the immutable `NeoWeb3Nova/frontend` revision `441886c3f7bbf93b82cacf67cb4bb4afa8084b96`, path `src/components/MainContent.tsx`; its canonical local vendored path is `web/public/colony/antforge-reference-colony.webp`. No unverified network-wide activity or reward totals exist and none may be invented.
 
 ## Product Principles
 
 1. Runnable loop before decorative breadth.
 2. Real onchain evidence before claims.
 3. One goal and one visible workflow before extra features.
-4. Mock chain-off intelligence honestly; never mock chain-on truth.
+4. Label synthetic Mock values as demo data; reserve Monad Testnet claims for Live evidence.
 5. Every animation communicates Agent or contract state.
 
 ## Accessibility & Inclusion

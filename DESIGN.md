@@ -22,7 +22,7 @@ A compact 64px status header sits above a three-column workspace: 300px Mission 
 - `--border-strong: rgba(183, 157, 255, 0.34)`
 - `--text-primary: #f5f3f8`
 - `--text-secondary: #bbb6c7`
-- `--text-muted: #817b8f`
+- `--text-muted: #938ca1`
 - `--monad: #836ef9`
 - `--monad-soft: #b9a8ff`
 - `--success: #55d69e`
@@ -31,6 +31,8 @@ A compact 64px status header sits above a three-column workspace: 300px Mission 
 - `--info: #72cde3`
 
 Green means successful/online/settled, gold means MON or escrow, red means failure/rejection/conflict, and Monad purple means network or active execution.
+
+`--text-muted` has 5.42:1 contrast on `--surface-raised` and is approved for 12px secondary metadata. Muted text must not carry critical, actionable, or status content.
 
 ## Typography
 
@@ -44,9 +46,13 @@ Use a 4px base rhythm with 8, 12, 16, 20, and 24px steps. Desktop side rails are
 
 - Header: brand, product line, mode, Runner, contract, wallet.
 - Mission Console: goal, fixed task preview, escrow, one primary action, progress.
-- Colony Stage: local authored image, six real state overlays, state-driven pheromone paths.
-- Evidence Rail: five real metrics, event timeline, Explorer link, explicit empty/error state.
-- Workflow Strip: five compact steps plus three proof lanes.
+- Colony Stage: canonical local artwork at `web/public/colony/antforge-reference-colony.webp`; six state overlays—Queen, Repair, Color, Story, Guard, Treasury—and state-driven pheromone paths.
+- Evidence Rail: five metrics—Network, Tasks settled, Escrow budget, Last inclusion, Latest block—plus event timeline and supported Explorer links.
+- Workflow Strip: five steps—Goal, Split tasks, Ant agents, Verify, Settle—and three proof lanes—Swarm Lane, Skill Guard, Conflict Lane.
+
+Every node, metric, step, and lane derives from `ColonySnapshot` or existing helpers. Loading is explicitly labelled and invents no value; empty data renders an unavailable/no-events state and no unsupported link; errors expose the real wallet, RPC, or contract failure with retry and never imply success or silently substitute Mock. Clearly labelled synthetic Mock values may support the demo but must never be styled or described as Monad Testnet facts; Live evidence may never be fabricated.
+
+The artwork authority is `NeoWeb3Nova/frontend` revision `441886c3f7bbf93b82cacf67cb4bb4afa8084b96`, source path `src/components/MainContent.tsx`; production uses only the canonical local vendored path above.
 
 ## Motion
 
@@ -54,7 +60,7 @@ Use 160–280ms transitions and transform/opacity. Pheromone and ant motion only
 
 ## Anti-references
 
-Do not ship static wallets, fake blocks, fake balances, Active Ant totals, cumulative network rewards, dollar estimates, Priority controls, editable skill-marketplace controls, Storage/Scout features, emoji icons, dead links, generic AI gradients, reward-farm neon, or decorative glassmorphism.
+Do not ship hard-coded placeholder addresses presented as connected or Live, fake blocks, fake balances, Active Ant totals, cumulative network rewards, dollar estimates, Priority controls, editable skill-marketplace controls, Storage/Scout features, emoji icons, dead links, generic AI gradients, reward-farm neon, or decorative glassmorphism. Authoritative configured Agent addresses are allowed and must retain their real source and state.
 
 ## Responsive rules
 

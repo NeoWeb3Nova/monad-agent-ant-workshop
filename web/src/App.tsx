@@ -193,6 +193,7 @@ function AppHeader({
           <strong>AntForge</strong>
           <small>Agent 蚂蚁工坊</small>
         </span>
+        <span className="monad-lockup"><Cube weight="fill" /> Built on Monad</span>
       </a>
       <p className="product-line">Autonomous swarm execution and settlement</p>
 

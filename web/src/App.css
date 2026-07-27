@@ -583,7 +583,7 @@ button:disabled {
 
 .efficiency-card strong {
   float: right;
-  color: var(--success);
+  color: var(--monad-soft);
   font-family: var(--mono);
   font-size: 15px;
   font-variant-numeric: tabular-nums;
@@ -602,7 +602,7 @@ button:disabled {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--success);
+  background: var(--monad);
   transition: width 240ms ease;
 }
 
@@ -657,7 +657,7 @@ button:disabled {
   stroke-linecap: round;
   stroke-dasharray: 7 13;
   opacity: 0.52;
-  animation: pheromone-flow 5s linear infinite;
+  animation: none;
   transition: stroke 240ms ease, opacity 240ms ease, stroke-width 240ms ease;
 }
 
@@ -665,6 +665,7 @@ button:disabled {
   stroke: var(--monad-soft);
   stroke-width: 4;
   opacity: 1;
+  animation: pheromone-flow 5s linear infinite;
 }
 
 .pheromone-pulse[data-error="true"] {
@@ -763,18 +764,24 @@ button:disabled {
   transition: border-color 220ms ease;
 }
 
-.task-chamber[data-status="claimed"],
-.task-chamber[data-status="submitted"] {
+.task-chamber[data-status="claimed"] {
   border-color: var(--monad);
+}
+
+.task-chamber[data-status="submitted"] {
+  border-color: color-mix(in srgb, var(--info) 56%, var(--monad));
 }
 
 .task-chamber[data-status="settled"] {
   border-color: var(--success);
 }
 
-.task-chamber[data-status="rejected"],
-.task-chamber[data-status="cancelled"] {
+.task-chamber[data-status="rejected"] {
   border-color: var(--danger);
+}
+
+.task-chamber[data-status="cancelled"] {
+  border-color: color-mix(in srgb, var(--danger) 42%, var(--text-muted));
 }
 
 .chamber-title {
@@ -830,10 +837,14 @@ button:disabled {
   background: var(--surface-raised);
 }
 
-.status-claimed,
-.status-submitted {
+.status-claimed {
   color: var(--monad-soft);
   background: color-mix(in srgb, var(--monad) 16%, var(--surface-inset));
+}
+
+.status-submitted {
+  color: color-mix(in srgb, var(--info) 72%, var(--monad-soft));
+  background: color-mix(in srgb, var(--info) 10%, var(--surface-inset));
 }
 
 .status-settled {
@@ -841,10 +852,14 @@ button:disabled {
   background: color-mix(in srgb, var(--success) 12%, var(--surface-inset));
 }
 
-.status-rejected,
-.status-cancelled {
+.status-rejected {
   color: var(--danger);
   background: color-mix(in srgb, var(--danger) 10%, var(--surface-inset));
+}
+
+.status-cancelled {
+  color: color-mix(in srgb, var(--danger) 46%, var(--text-muted));
+  background: color-mix(in srgb, var(--danger) 5%, var(--surface-inset));
 }
 
 .artifact-preview {
@@ -921,8 +936,16 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 3px;
-  color: var(--success);
+  color: var(--text-muted);
   font-size: 11px;
+}
+
+.guard-chamber:has(.status-submitted) .verification-list span {
+  color: var(--info);
+}
+
+.guard-chamber:has(.status-settled) .verification-list span {
+  color: var(--success);
 }
 
 .verification-list svg {

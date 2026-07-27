@@ -34,7 +34,7 @@ The product name is AntForge on Monad / Agent 蚂蚁工坊. The underground ant-
 
 ## Evidence on Hand
 
-Real deployment and interaction evidence lives in `deployments/monad-testnet.json` and `docs/04-monad-testnet-evidence.md`. The frontend reads the deployed contract through the existing Monad adapter. The colony artwork source is the immutable `NeoWeb3Nova/frontend` revision `441886c3f7bbf93b82cacf67cb4bb4afa8084b96`, path `src/components/MainContent.tsx`; its canonical local vendored path is `web/public/colony/antforge-reference-colony.webp`, with SHA-256 `394b6bb0e47c40449131fbe29a515c49ba01394a2aa3b7e9b412bbd8c6ec7ab5`. No unverified network-wide activity or reward totals exist and none may be invented.
+Real deployment and interaction evidence lives in `deployments/monad-testnet.json` and `docs/04-monad-testnet-evidence.md`. The frontend reads the deployed contract through the existing Monad adapter. The immutable colony artwork source comes from `NeoWeb3Nova/frontend` revision `441886c3f7bbf93b82cacf67cb4bb4afa8084b96`, path `src/components/MainContent.tsx`; its byte-preserved local path is `web/public/colony/antforge-reference-colony-source.webp`, with SHA-256 `394b6bb0e47c40449131fbe29a515c49ba01394a2aa3b7e9b412bbd8c6ec7ab5`. Production uses the derived, text-free backdrop at `web/public/colony/antforge-reference-colony.webp`, with SHA-256 `7505f01f42226160e20ebf214b03dc468a43ae79fb9b85567c199ba984134566`. `web/scripts/prepare-colony-art.py` reproducibly uses Pillow 12.1.1 to convert the source to RGB, apply an intrinsic-size Gaussian blur of radius 8, blend it 50% with `#080910`, and encode WebP at quality 90 with method 6. No unverified network-wide activity or reward totals exist and none may be invented.
 
 ## Product Principles
 

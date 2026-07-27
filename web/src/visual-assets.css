@@ -22,27 +22,8 @@
   display: none !important;
 }
 
-/* The reference art includes baked demo labels and synthetic figures. These
-   chamber-local masks suppress that non-authoritative text while preserving
-   the cave walls, central tunnel spine, and purple pheromone atmosphere. */
-.colony-stage::before {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  content: '';
-  background:
-    linear-gradient(180deg, rgba(3, 4, 10, 0.96) 0%, rgba(3, 4, 10, 0.84) 8%, rgba(3, 4, 10, 0.34) 17%, transparent 27%, transparent 82%, rgba(3, 4, 10, 0.42) 93%, rgba(3, 4, 10, 0.92) 100%),
-    radial-gradient(ellipse 25% 20% at 19% 12%, rgba(4, 5, 11, 0.94) 0 34%, rgba(4, 5, 11, 0.76) 56%, transparent 100%),
-    radial-gradient(ellipse 16% 18% at 50% 10%, rgba(4, 4, 12, 0.86) 0 34%, rgba(4, 4, 12, 0.62) 58%, transparent 100%),
-    radial-gradient(ellipse 25% 20% at 81% 12%, rgba(4, 5, 11, 0.94) 0 34%, rgba(4, 5, 11, 0.76) 56%, transparent 100%),
-    radial-gradient(ellipse 25% 21% at 19% 52%, rgba(4, 5, 11, 0.94) 0 36%, rgba(4, 5, 11, 0.76) 58%, transparent 100%),
-    radial-gradient(ellipse 25% 21% at 81% 52%, rgba(4, 5, 11, 0.94) 0 36%, rgba(4, 5, 11, 0.76) 58%, transparent 100%),
-    radial-gradient(ellipse 25% 20% at 19% 89%, rgba(4, 5, 11, 0.94) 0 38%, rgba(4, 5, 11, 0.78) 60%, transparent 100%),
-    radial-gradient(ellipse 18% 19% at 62% 89%, rgba(4, 5, 11, 0.91) 0 38%, rgba(4, 5, 11, 0.72) 60%, transparent 100%),
-    radial-gradient(ellipse 18% 19% at 85% 89%, rgba(4, 5, 11, 0.91) 0 38%, rgba(4, 5, 11, 0.72) 60%, transparent 100%);
-}
-
+/* The production WebP is redacted in pixels. Keep only global atmosphere
+   here; foreground ordering remains explicit and independent of cropping. */
 .colony-stage::after {
   position: absolute;
   inset: 0;

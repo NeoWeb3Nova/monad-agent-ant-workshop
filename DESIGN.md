@@ -46,13 +46,13 @@ Use a 4px base rhythm with 8, 12, 16, 20, and 24px steps. Desktop side rails are
 
 - Header: brand, product line, mode, Runner, contract, wallet.
 - Mission Console: goal, fixed task preview, escrow, one primary action, progress.
-- Colony Stage: canonical local artwork at `web/public/colony/antforge-reference-colony.webp`; six state overlays—Queen, Repair, Color, Story, Guard, Treasury—and state-driven pheromone paths.
+- Colony Stage: pixel-redacted production artwork at `web/public/colony/antforge-reference-colony.webp`; six state overlays—Queen, Repair, Color, Story, Guard, Treasury—and state-driven pheromone paths.
 - Evidence Rail: five metrics—Network, Tasks settled, Escrow budget, Last inclusion, Latest block—plus event timeline and supported Explorer links.
 - Workflow Strip: five steps—Goal, Split tasks, Ant agents, Verify, Settle—and three proof lanes—Swarm Lane, Skill Guard, Conflict Lane.
 
 Every node, metric, step, and lane derives from `ColonySnapshot` or existing helpers. Loading is explicitly labelled and invents no value; empty data renders an unavailable/no-events state and no unsupported link; errors expose the real wallet, RPC, or contract failure with retry and never imply success or silently substitute Mock. Clearly labelled synthetic Mock values may support the demo but must never be styled or described as Monad Testnet facts; Live evidence may never be fabricated.
 
-The artwork authority is `NeoWeb3Nova/frontend` revision `441886c3f7bbf93b82cacf67cb4bb4afa8084b96`, source path `src/components/MainContent.tsx`; production uses only the canonical local vendored path above, whose SHA-256 is `394b6bb0e47c40449131fbe29a515c49ba01394a2aa3b7e9b412bbd8c6ec7ab5`.
+The artwork authority is `NeoWeb3Nova/frontend` revision `441886c3f7bbf93b82cacf67cb4bb4afa8084b96`, source path `src/components/MainContent.tsx`. The immutable source bytes are preserved at `web/public/colony/antforge-reference-colony-source.webp` with SHA-256 `394b6bb0e47c40449131fbe29a515c49ba01394a2aa3b7e9b412bbd8c6ec7ab5`. Production uses the derived backdrop at `web/public/colony/antforge-reference-colony.webp` with SHA-256 `7505f01f42226160e20ebf214b03dc468a43ae79fb9b85567c199ba984134566`. The committed `web/scripts/prepare-colony-art.py` transformation is exact: with Pillow 12.1.1, convert to RGB, apply `GaussianBlur(radius=8)` at the intrinsic 512×356 size, blend 50% with `#080910`, then encode WebP with quality 90 and method 6. Baked labels, numbers, controls, and charts are unreadable in the pixels before CSS scaling; CSS supplies only global tint/vignette and foreground z-index, never chamber-coordinate redaction masks.
 
 ## Motion
 

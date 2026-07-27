@@ -305,7 +305,7 @@ cast code <address> --rpc-url "$MONAD_RPC_URL"
 <table>
 <tr>
 <td width="108" valign="top">
-<img src="https://avatars.githubusercontent.com/u/221855057?v=4" alt="Neo.Yun" width="88">
+<img src="https://raw.githubusercontent.com/NeoWeb3Nova/sticker-pack-maker-skill/master/media/wechat-neo.png" alt="Neo.Yun" width="88">
 </td>
 <td valign="top">
 

@@ -21,6 +21,7 @@ body {
   min-width: 320px;
   min-height: 100dvh;
   overflow: hidden;
+  overflow-x: hidden;
 }
 
 button,
@@ -52,9 +53,10 @@ button {
   background: rgba(185, 168, 255, 0.28);
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1370px) {
   body {
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 }
 
@@ -63,8 +65,7 @@ button {
   *::before,
   *::after {
     scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    animation: none !important;
+    transition: none !important;
   }
 }

@@ -1,5 +1,5 @@
 /* Approved colony backdrop layer. App.css owns layout, sizing, typography, and state. */
-.colony-stage {
+.colony-canvas {
   background-color: var(--surface-root);
   background-image:
     linear-gradient(180deg, rgba(8, 9, 16, 0.12), rgba(8, 9, 16, 0.34)),
@@ -12,7 +12,7 @@
 }
 
 /* The production artwork is redacted in pixels. This is global atmosphere only. */
-.colony-stage::after {
+.colony-canvas::after {
   position: absolute;
   inset: 0;
   z-index: 2;
@@ -38,6 +38,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .moving-ant {
-    display: none;
+    display: none !important;
   }
 }

@@ -82,6 +82,29 @@ button:disabled {
   background: var(--surface-root);
 }
 
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 12px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 9px;
+  color: var(--text-primary);
+  background: var(--monad);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transform: translateY(calc(-100% - 16px));
+  transition: transform 180ms ease;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
 .topbar {
   position: relative;
   z-index: 50;
@@ -238,7 +261,11 @@ button:disabled {
 .wallet-button,
 .contract-chip,
 .icon-button,
-.reset-button {
+.reset-button,
+.explorer-button,
+.chamber-proof:not(.muted),
+.event-copy a,
+.source-link {
   border: 1px solid var(--border-subtle);
   color: var(--text-primary);
   background: var(--surface-raised);
@@ -274,7 +301,11 @@ button:disabled {
 .contract-chip:active,
 .icon-button:active,
 .reset-button:active,
-.release-button:active {
+.release-button:active,
+.explorer-button:active,
+.chamber-proof:not(.muted):active,
+.event-copy a:active,
+.source-link:active {
   transform: scale(0.98);
 }
 
@@ -619,6 +650,15 @@ button:disabled {
   border-color: var(--border-strong);
 }
 
+.colony-canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  overflow: hidden;
+  isolation: isolate;
+}
+
 .sand-layer {
   display: none;
 }
@@ -655,7 +695,7 @@ button:disabled {
   stroke-dasharray: 7 13;
   opacity: 0.52;
   animation: none;
-  transition: stroke 240ms ease, opacity 240ms ease, stroke-width 240ms ease;
+  transition: stroke 240ms ease, opacity 240ms ease;
 }
 
 .pheromone-pulse[data-active="true"] {
@@ -1431,14 +1471,7 @@ button:disabled {
   to { stroke-dashoffset: -100; }
 }
 
-@media (max-width: 1370px) and (min-width: 1181px) {
-  .product-line,
-  .topbar .status-badge:nth-of-type(2) {
-    display: none;
-  }
-}
-
-@media (max-width: 1180px) {
+@media (max-width: 1370px) {
   .antforge-app {
     overflow: visible;
   }
@@ -1449,9 +1482,7 @@ button:disabled {
   }
 
   .product-line,
-  .topbar-actions .status-badge,
-  .contract-chip,
-  .monad-lockup {
+  .topbar-actions > .status-badge:not(:first-child) {
     display: none;
   }
 
@@ -1468,7 +1499,12 @@ button:disabled {
   }
 
   .mission-panel { order: 1; }
-  .colony-stage { order: 2; min-height: 680px; }
+  .colony-stage {
+    order: 2;
+    height: 700px;
+    min-height: 700px;
+    scroll-margin-top: 76px;
+  }
   .workflow-console { order: 3; }
   .evidence-sidebar { order: 4; }
 
@@ -1483,14 +1519,181 @@ button:disabled {
     border-top: 1px solid var(--border-subtle);
     border-left: 0;
   }
+
+  .source-link {
+    position: static;
+    width: max-content;
+    margin: 0 12px 12px auto;
+    padding: 0 8px;
+  }
+}
+
+@media (pointer: coarse) {
+  button,
+  .brand,
+  .explorer-button,
+  .chamber-proof:not(.muted),
+  .event-copy a,
+  .source-link {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .icon-button {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (max-width: 640px) {
+  .topbar {
+    gap: 8px;
+    height: auto;
+    min-height: 64px;
+    padding: 10px 12px;
+  }
+
+  .brand {
+    gap: 8px;
+    min-height: 44px;
+  }
+
+  .brand-copy small,
+  .product-line,
+  .contract-chip,
+  .topbar-actions > .status-badge:not(:first-child),
+  .monad-lockup {
+    display: none;
+  }
+
+  .topbar-actions {
+    flex: 1 1 auto;
+    gap: 6px;
+  }
+
+  .topbar-actions > .status-badge:first-child {
+    min-height: 36px;
+    padding-inline: 8px;
+  }
+
+  .dashboard-grid {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .mission-panel,
+  .evidence-sidebar {
+    padding: 12px;
+  }
+
+  .goal-input {
+    min-height: 120px;
+    font-size: 16px;
+  }
+
+  .colony-stage {
+    height: 760px;
+    min-height: 760px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
+  }
+
+  .colony-canvas {
+    width: 680px;
+    min-width: 680px;
+    height: 758px;
+  }
+
+  .queen-position { left: 25%; top: 12%; }
+  .repair-position { left: 25%; top: 26%; }
+  .color-position { left: 75%; top: 26%; }
+  .guard-position { left: 25%; top: 50%; }
+  .treasury-position { left: 75%; top: 50%; }
+  .story-position { left: 25%; top: 74%; }
+  .rogue-position { left: 75%; top: 87%; }
+
+  .task-chamber,
+  .guard-chamber,
+  .treasury-chamber {
+    width: 196px;
+  }
+
+  .rogue-gate {
+    width: 196px;
+  }
+
+  .workflow-console {
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .workflow-steps,
+  .proof-lanes {
+    grid-template-columns: 1fr;
+  }
+
+  .workflow-steps {
+    gap: 6px;
+  }
+
+  .workflow-step {
+    min-height: 44px;
+  }
+
+  .step-arrow {
+    display: none;
+  }
+
+  .proof-lanes {
+    gap: 6px;
+  }
+
+  .mini-lane {
+    min-height: 44px;
+  }
+
+  button,
+  .explorer-button,
+  .chamber-proof:not(.muted),
+  .event-copy a,
+  .source-link {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .wallet-button {
+    justify-content: center;
+    min-height: 44px;
+    padding-inline: 9px;
+  }
+
+  .icon-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .chamber-proof:not(.muted),
+  .event-copy a {
+    margin-top: 0;
+    padding-block: 8px;
+  }
+
+  .source-link {
+    margin: 0 8px 8px auto;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .moving-ant {
+    display: none !important;
   }
 }

@@ -117,6 +117,7 @@ function App() {
 
   return (
     <div className="antforge-app">
+      <a className="skip-link" href="#colony-stage">Skip to colony status</a>
       <AppHeader
         address={address}
         copied={copied}
@@ -144,12 +145,12 @@ function App() {
 
         <ColonyStage snapshot={snapshot} />
 
+        <WorkflowConsole snapshot={snapshot} />
+
         <EvidenceSidebar
           onRefresh={() => void dataSource.refresh()}
           snapshot={snapshot}
         />
-
-        <WorkflowConsole snapshot={snapshot} />
       </main>
 
       <a
@@ -205,7 +206,13 @@ function AppHeader({
         <StatusBadge tone={snapshot.runnerStatus === "offline" ? "yellow" : "neutral"}>
           Runner · {snapshot.runnerStatus}
         </StatusBadge>
-        <button className="contract-chip" type="button" onClick={onCopyContract} disabled={!snapshot.contractAddress}>
+        <button
+          aria-label={copied ? "Contract address copied" : "Copy contract address"}
+          className="contract-chip"
+          type="button"
+          onClick={onCopyContract}
+          disabled={!snapshot.contractAddress}
+        >
           <LockKey weight="bold" />
           {snapshot.contractAddress ? shorten(snapshot.contractAddress, 5) : "Contract pending"}
           {copied ? <Check /> : <Copy />}
@@ -343,74 +350,77 @@ function ColonyStage({ snapshot }: { snapshot: ColonySnapshot }) {
       aria-label="AntForge colony execution graph"
       className="colony-stage"
       id="colony-stage"
+      tabIndex={-1}
     >
-      <div className="sand-layer sand-one" />
-      <div className="sand-layer sand-two" />
-      <div className="colony-vignette" />
+      <div className="colony-canvas">
+        <div className="sand-layer sand-one" />
+        <div className="sand-layer sand-two" />
+        <div className="colony-vignette" />
 
-      <PheromoneNetwork tasks={snapshot.tasks} rogue={snapshot.skillGuardLane} />
+        <PheromoneNetwork tasks={snapshot.tasks} rogue={snapshot.skillGuardLane} />
 
-      <div className="queen-core chamber-position queen-position">
-        <div className="queen-crystal"><CrownSimple weight="fill" /></div>
-        <strong>Queen Core</strong>
-        <span>蚁后中枢</span>
-        <small><span className="online-dot" /> {snapshot.tasks.length > 0 ? "Goal ingested" : "Awaiting mission"}</small>
-      </div>
-
-      <TaskChamber
-        className="repair-position"
-        explorerUrl={snapshot.explorerUrl}
-        skill="repair"
-        task={repair}
-      />
-      <TaskChamber
-        className="color-position"
-        explorerUrl={snapshot.explorerUrl}
-        skill="color"
-        task={color}
-      />
-      <TaskChamber
-        className="story-position"
-        explorerUrl={snapshot.explorerUrl}
-        skill="story"
-        task={story}
-      />
-
-      <div className="guard-chamber chamber-position guard-position">
-        <div className="chamber-title">
-          <ShieldCheck weight="fill" />
-          <span><strong>Guard Chamber</strong><small>守卫验证中心</small></span>
-          <TaskStatusPill status={submitted > 0 ? "submitted" : settled > 0 ? "settled" : "open"} />
+        <div className="queen-core chamber-position queen-position">
+          <div className="queen-crystal"><CrownSimple weight="fill" /></div>
+          <strong>Queen Core</strong>
+          <span>蚁后中枢</span>
+          <small><span className="online-dot" /> {snapshot.tasks.length > 0 ? "Goal ingested" : "Awaiting mission"}</small>
         </div>
-        <div className="guard-shield"><ShieldCheck weight="duotone" /></div>
-        <div className="verification-list">
-          <span><Check /> Task relation</span>
-          <span><Check /> Output hash</span>
-          <span><Check /> Skill guard</span>
-        </div>
-      </div>
 
-      <div className="treasury-chamber chamber-position treasury-position">
-        <div className="chamber-title">
-          <Cube weight="fill" />
-          <span><strong>Treasury Chamber</strong><small>链上金库</small></span>
-        </div>
-        <div className="treasury-balance">
-          <small>Escrow budget</small>
-          <strong>{snapshot.totalBudgetMon} MON</strong>
-        </div>
-        <div className="ledger-row"><span>Reward credited</span><strong>{settled}/{snapshot.tasks.length || 3}</strong></div>
-        <div className="ledger-row"><span>Settlement model</span><strong>Pull payment</strong></div>
-      </div>
+        <TaskChamber
+          className="repair-position"
+          explorerUrl={snapshot.explorerUrl}
+          skill="repair"
+          task={repair}
+        />
+        <TaskChamber
+          className="color-position"
+          explorerUrl={snapshot.explorerUrl}
+          skill="color"
+          task={color}
+        />
+        <TaskChamber
+          className="story-position"
+          explorerUrl={snapshot.explorerUrl}
+          skill="story"
+          task={story}
+        />
 
-      <div className="rogue-gate chamber-position rogue-position" data-state={snapshot.skillGuardLane.state}>
-        <WarningCircle weight="fill" />
-        <span><strong>Rogue Gate</strong><small>{snapshot.skillGuardLane.summary}</small></span>
-      </div>
+        <div className="guard-chamber chamber-position guard-position">
+          <div className="chamber-title">
+            <ShieldCheck weight="fill" />
+            <span><strong>Guard Chamber</strong><small>守卫验证中心</small></span>
+            <TaskStatusPill status={submitted > 0 ? "submitted" : settled > 0 ? "settled" : "open"} />
+          </div>
+          <div className="guard-shield"><ShieldCheck weight="duotone" /></div>
+          <div className="verification-list">
+            <span><Check /> Task relation</span>
+            <span><Check /> Output hash</span>
+            <span><Check /> Skill guard</span>
+          </div>
+        </div>
 
-      <div className="colony-caption">
-        <span><Pulse weight="fill" /> Live colony topology</span>
-        <strong>{snapshot.colonyId === "mock-colony" ? "Mock Colony" : shorten(snapshot.colonyId, 8)}</strong>
+        <div className="treasury-chamber chamber-position treasury-position">
+          <div className="chamber-title">
+            <Cube weight="fill" />
+            <span><strong>Treasury Chamber</strong><small>链上金库</small></span>
+          </div>
+          <div className="treasury-balance">
+            <small>Escrow budget</small>
+            <strong>{snapshot.totalBudgetMon} MON</strong>
+          </div>
+          <div className="ledger-row"><span>Reward credited</span><strong>{settled}/{snapshot.tasks.length || 3}</strong></div>
+          <div className="ledger-row"><span>Settlement model</span><strong>Pull payment</strong></div>
+        </div>
+
+        <div className="rogue-gate chamber-position rogue-position" data-state={snapshot.skillGuardLane.state}>
+          <WarningCircle weight="fill" />
+          <span><strong>Rogue Gate</strong><small>{snapshot.skillGuardLane.summary}</small></span>
+        </div>
+
+        <div className="colony-caption">
+          <span><Pulse weight="fill" /> Live colony topology</span>
+          <strong>{snapshot.colonyId === "mock-colony" ? "Mock Colony" : shorten(snapshot.colonyId, 8)}</strong>
+        </div>
       </div>
     </section>
   );

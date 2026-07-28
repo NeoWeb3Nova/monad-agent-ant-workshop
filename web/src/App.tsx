@@ -439,6 +439,13 @@ function TaskChamber({
 }) {
   const copy = chamberCopy[skill];
   const IconComponent = skill === "repair" ? ImageSquare : skill === "color" ? PaintBrush : TextT;
+  const proofFallback = !task
+    ? "No task transaction yet"
+    : task.status === "open"
+      ? "Awaiting claim"
+      : task.transactionHash
+        ? "Explorer link unavailable"
+        : "No Explorer transaction";
 
   return (
     <article className={`task-chamber chamber-position ${className}`} data-status={task?.status ?? "open"}>
@@ -468,9 +475,7 @@ function TaskChamber({
           {shorten(task.transactionHash, 6)} <ArrowSquareOut />
         </a>
       ) : (
-        <span className="chamber-proof muted">
-          {task?.status === "open" ? "Awaiting claim" : "No Explorer transaction available"}
-        </span>
+        <span className="chamber-proof muted">{proofFallback}</span>
       )}
     </article>
   );

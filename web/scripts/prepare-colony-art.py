@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import hashlib
+import os
+import tempfile
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
@@ -15,6 +17,7 @@ from PIL import (
     ImageFilter,
     ImageStat,
     __version__ as pillow_version,
+    features,
 )
 
 WEB_ROOT = Path(__file__).resolve().parents[1]
@@ -24,6 +27,7 @@ OUTPUT_PATH = WEB_ROOT / "public/colony/antforge-reference-colony.webp"
 SOURCE_SHA256 = "394b6bb0e47c40449131fbe29a515c49ba01394a2aa3b7e9b412bbd8c6ec7ab5"
 OUTPUT_SHA256 = "693d0bb66aee5c9a39fd3db7491a8417476a074c2c5b9568299a9d793e10819b"
 PILLOW_VERSION = "12.1.1"
+LIBWEBP_VERSION = "1.6.0"
 EXPECTED_SIZE = (512, 356)
 LOCAL_BLUR_RADIUS = 10
 STRONG_BLUR_RADIUS = 12
@@ -36,6 +40,8 @@ STRONG_BLEND_AMOUNT = 0.48
 CRITICAL_BLEND_AMOUNT = 0.52
 WEBP_QUALITY = 90
 WEBP_METHOD = 6
+MIN_MASK_NONZERO_PERCENT = 60.0
+MIN_MASK_STRONG_PERCENT = 45.0
 MAX_MASK_NONZERO_PERCENT = 70.0
 MAX_MASK_STRONG_PERCENT = 55.0
 MIN_LUMINANCE_STDDEV_RATIO = 0.35
@@ -92,6 +98,94 @@ REDACTION_REGIONS = (
     RedactionRegion("worker title/count", (392, 269, 512, 314), 8),
 )
 
+# These names and evidence points deliberately do not derive from the regions.
+# A region deletion must fail validation rather than delete its proof.
+REQUIRED_REGION_NAMES = frozenset(
+    {
+        "image title/status",
+        "image preview left",
+        "image preview middle",
+        "image preview small",
+        "image preview right",
+        "image footer left",
+        "image footer middle",
+        "image footer right",
+        "image footer control",
+        "queen title/status",
+        "llm title/status",
+        "llm code panel",
+        "llm preview left",
+        "llm preview middle",
+        "llm preview right",
+        "llm footer type",
+        "llm footer chat",
+        "llm footer document",
+        "llm footer control",
+        "guard title/status",
+        "guard left display",
+        "guard worker display",
+        "guard shield panel",
+        "guard footer quality",
+        "guard footer content",
+        "guard footer proof",
+        "treasury title/status",
+        "treasury hex control",
+        "treasury balance/chart",
+        "storage title/status",
+        "storage shelves left",
+        "storage shelves middle-left",
+        "storage shelves middle-right",
+        "storage shelves right",
+        "storage footer artifacts",
+        "storage footer memories",
+        "storage footer size",
+        "scout title/count",
+        "worker title/count",
+    }
+)
+
+EVIDENCE_TARGET_POINTS = (
+    ("image title/status", (103, 44)),
+    ("image preview left", (41, 78)),
+    ("image preview middle", (78, 77)),
+    ("image preview small", (115, 80)),
+    ("image preview right", (165, 79)),
+    ("image footer left", (44, 116)),
+    ("image footer middle", (106, 116)),
+    ("image footer right", (170, 116)),
+    ("image footer control", (212, 116)),
+    ("queen title/status", (258, 84)),
+    ("llm title/status", (409, 44)),
+    ("llm code panel", (363, 85)),
+    ("llm preview left", (416, 82)),
+    ("llm preview middle", (454, 82)),
+    ("llm preview right", (492, 82)),
+    ("llm footer type", (406, 120)),
+    ("llm footer chat", (435, 120)),
+    ("llm footer document", (465, 120)),
+    ("llm footer control", (494, 120)),
+    ("guard title/status", (101, 161)),
+    ("guard left display", (45, 195)),
+    ("guard worker display", (93, 203)),
+    ("guard shield panel", (146, 200)),
+    ("guard footer quality", (48, 234)),
+    ("guard footer content", (117, 234)),
+    ("guard footer proof", (198, 234)),
+    ("treasury title/status", (410, 162)),
+    ("treasury hex control", (466, 192)),
+    ("treasury balance/chart", (425, 239)),
+    ("storage title/status", (105, 279)),
+    ("storage shelves left", (50, 304)),
+    ("storage shelves middle-left", (115, 300)),
+    ("storage shelves middle-right", (176, 300)),
+    ("storage shelves right", (225, 303)),
+    ("storage footer artifacts", (50, 339)),
+    ("storage footer memories", (124, 339)),
+    ("storage footer size", (206, 339)),
+    ("scout title/count", (335, 291)),
+    ("worker title/count", (452, 291)),
+)
+
 PROTECTED_POINTS = (
     (256, 36),  # queen crystal
     (256, 120),  # upper center spine
@@ -103,10 +197,6 @@ PROTECTED_POINTS = (
     (287, 137),  # upper tunnel edge and purple light
     (335, 330),  # scout ants
     (455, 330),  # worker ants
-)
-TARGET_POINTS = tuple(
-    (region.name, ((region.box[0] + region.box[2]) // 2, (region.box[1] + region.box[3]) // 2))
-    for region in REDACTION_REGIONS
 )
 
 FORMER_CHAMBER_REGIONS = (
@@ -134,9 +224,126 @@ CRITICAL_REDACTION_NAMES = frozenset(
     }
 )
 
+EXPECTED_STRONG_REDACTION_NAMES = frozenset(
+    {
+        "image title/status",
+        "image footer left",
+        "image footer middle",
+        "image footer right",
+        "image footer control",
+        "queen title/status",
+        "llm title/status",
+        "llm code panel",
+        "llm footer type",
+        "llm footer chat",
+        "llm footer document",
+        "llm footer control",
+        "guard title/status",
+        "guard footer quality",
+        "guard footer content",
+        "guard footer proof",
+        "treasury title/status",
+        "treasury balance/chart",
+        "storage title/status",
+        "storage footer artifacts",
+        "storage footer memories",
+        "storage footer size",
+        "scout title/count",
+        "worker title/count",
+    }
+)
+
+EXPECTED_CRITICAL_REDACTION_NAMES = frozenset(
+    {
+        "guard title/status",
+        "treasury title/status",
+        "treasury balance/chart",
+        "storage title/status",
+    }
+)
+
 
 def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def require(condition: bool, message: str) -> None:
+    if not condition:
+        raise RuntimeError(message)
+
+
+def validate_redaction_configuration() -> None:
+    width, height = EXPECTED_SIZE
+    region_names = tuple(region.name for region in REDACTION_REGIONS)
+    actual_names = frozenset(region_names)
+    require(
+        len(region_names) == len(actual_names),
+        "redaction region names must be unique",
+    )
+    require(
+        actual_names == REQUIRED_REGION_NAMES,
+        "redaction region names do not match the required fixed set",
+    )
+
+    for region in REDACTION_REGIONS:
+        require(len(region.box) == 4, f"invalid box for {region.name}")
+        require(
+            all(isinstance(value, int) for value in region.box),
+            f"box coordinates must be integers for {region.name}",
+        )
+        left, top, right, bottom = region.box
+        require(left < right and top < bottom, f"unordered box for {region.name}")
+        require(
+            0 <= left < right <= width and 0 <= top < bottom <= height,
+            f"out-of-bounds box for {region.name}",
+        )
+        require(isinstance(region.radius, int), f"radius must be an integer for {region.name}")
+        require(
+            0 <= region.radius <= min(right - left, bottom - top) // 2,
+            f"invalid radius for {region.name}",
+        )
+
+    evidence_names = tuple(name for name, _point in EVIDENCE_TARGET_POINTS)
+    evidence_points = tuple(point for _name, point in EVIDENCE_TARGET_POINTS)
+    require(
+        len(evidence_names) == len(set(evidence_names)),
+        "evidence target names must be unique",
+    )
+    require(
+        frozenset(evidence_names) == REQUIRED_REGION_NAMES,
+        "evidence targets do not match the required fixed region set",
+    )
+    require(
+        len(evidence_points) == len(set(evidence_points)),
+        "evidence target points must be unique",
+    )
+    for name, point in EVIDENCE_TARGET_POINTS:
+        require(len(point) == 2, f"invalid evidence target for {name}")
+        x, y = point
+        require(
+            isinstance(x, int) and isinstance(y, int) and 0 <= x < width and 0 <= y < height,
+            f"out-of-bounds evidence target for {name}: {point}",
+        )
+
+    require(
+        len(PROTECTED_POINTS) == len(set(PROTECTED_POINTS)),
+        "protected points must be unique",
+    )
+    for point in PROTECTED_POINTS:
+        require(len(point) == 2, f"invalid protected point: {point}")
+        x, y = point
+        require(
+            isinstance(x, int) and isinstance(y, int) and 0 <= x < width and 0 <= y < height,
+            f"out-of-bounds protected point: {point}",
+        )
+
+    for label, names, expected_names in (
+        ("strong", STRONG_REDACTION_NAMES, EXPECTED_STRONG_REDACTION_NAMES),
+        ("critical", CRITICAL_REDACTION_NAMES, EXPECTED_CRITICAL_REDACTION_NAMES),
+    ):
+        require(bool(names), f"{label} redaction names must not be empty")
+        require(names <= actual_names, f"{label} redaction names must be actual regions")
+        require(names == expected_names, f"{label} redaction names do not match the fixed set")
 
 
 def render_mask(regions: tuple[RedactionRegion, ...]) -> Image.Image:
@@ -149,23 +356,44 @@ def render_mask(regions: tuple[RedactionRegion, ...]) -> Image.Image:
 
 
 def build_redaction_mask() -> Image.Image:
+    validate_redaction_configuration()
     mask = render_mask(REDACTION_REGIONS)
 
-    assert mask.mode == "L"
-    assert mask.size == EXPECTED_SIZE
+    require(mask.mode == "L", "redaction mask must use L mode")
+    require(mask.size == EXPECTED_SIZE, "redaction mask has unexpected dimensions")
     for point in PROTECTED_POINTS:
         value = mask.getpixel(point)
-        assert isinstance(value, int) and value == 0, f"redaction mask leaked into {point}"
-    for name, point in TARGET_POINTS:
+        require(
+            isinstance(value, int) and value == 0,
+            f"redaction mask leaked into {point}",
+        )
+    for name, point in EVIDENCE_TARGET_POINTS:
         value = mask.getpixel(point)
-        assert isinstance(value, int) and value >= 240, f"redaction mask missed {name} at {point}"
+        require(
+            isinstance(value, int) and value >= 240,
+            f"redaction mask missed {name} at {point}",
+        )
 
     histogram = mask.histogram()
     pixel_count = EXPECTED_SIZE[0] * EXPECTED_SIZE[1]
     nonzero_percent = 100 * (pixel_count - histogram[0]) / pixel_count
     strong_percent = 100 * sum(histogram[128:]) / pixel_count
-    assert nonzero_percent < MAX_MASK_NONZERO_PERCENT, "redaction mask is too broad"
-    assert strong_percent < MAX_MASK_STRONG_PERCENT, "strong redaction mask is too broad"
+    require(
+        nonzero_percent > MIN_MASK_NONZERO_PERCENT,
+        f"redaction mask coverage is too low: {nonzero_percent:.2f}%",
+    )
+    require(
+        strong_percent > MIN_MASK_STRONG_PERCENT,
+        f"strong redaction mask coverage is too low: {strong_percent:.2f}%",
+    )
+    require(
+        nonzero_percent < MAX_MASK_NONZERO_PERCENT,
+        f"redaction mask is too broad: {nonzero_percent:.2f}%",
+    )
+    require(
+        strong_percent < MAX_MASK_STRONG_PERCENT,
+        f"strong redaction mask is too broad: {strong_percent:.2f}%",
+    )
     return mask
 
 
@@ -174,8 +402,8 @@ def luminance_stddev(image: Image.Image, box: tuple[int, int, int, int]) -> floa
 
 
 def build_backdrop(source: Image.Image) -> Image.Image:
-    assert source.mode == "RGB"
-    assert source.size == EXPECTED_SIZE
+    require(source.mode == "RGB", "source working image must use RGB mode")
+    require(source.size == EXPECTED_SIZE, "source working image has unexpected dimensions")
 
     mask = build_redaction_mask()
     local_blur = source.filter(ImageFilter.GaussianBlur(radius=LOCAL_BLUR_RADIUS))
@@ -210,20 +438,21 @@ def build_backdrop(source: Image.Image) -> Image.Image:
     )
     backdrop = Image.composite(critical_redaction, backdrop, critical_mask)
 
-    assert backdrop.mode == "RGB"
-    assert backdrop.size == EXPECTED_SIZE
+    require(backdrop.mode == "RGB", "derived backdrop must use RGB mode")
+    require(backdrop.size == EXPECTED_SIZE, "derived backdrop has unexpected dimensions")
     outside_selector = mask.point(lambda value: 255 if value == 0 else 0)
     outside_difference = Image.composite(
         ImageChops.difference(backdrop, source),
         Image.new("RGB", EXPECTED_SIZE, 0),
         outside_selector,
     )
-    assert outside_difference.getbbox() is None, "pixels outside the mask changed"
+    require(outside_difference.getbbox() is None, "pixels outside the mask changed")
     for name, box in FORMER_CHAMBER_REGIONS:
         source_stddev = luminance_stddev(source, box)
         backdrop_stddev = luminance_stddev(backdrop, box)
-        assert backdrop_stddev >= source_stddev * MIN_LUMINANCE_STDDEV_RATIO, (
-            f"{name} chamber texture collapsed: {source_stddev:.2f} -> {backdrop_stddev:.2f}"
+        require(
+            backdrop_stddev >= source_stddev * MIN_LUMINANCE_STDDEV_RATIO,
+            f"{name} chamber texture collapsed: {source_stddev:.2f} -> {backdrop_stddev:.2f}",
         )
     return backdrop
 
@@ -239,27 +468,73 @@ def encode(image: Image.Image) -> bytes:
     return buffer.getvalue()
 
 
-def main() -> None:
-    assert pillow_version == PILLOW_VERSION, "Pillow version mismatch"
-    source_bytes = SOURCE_PATH.read_bytes()
-    assert sha256(source_bytes) == SOURCE_SHA256, "immutable source hash mismatch"
+def validate_encoded_output(output_bytes: bytes) -> None:
+    try:
+        with Image.open(BytesIO(output_bytes)) as production_image:
+            require(production_image.format == "WEBP", "derived output must be WebP")
+            require(production_image.mode == "RGB", "derived output must use RGB mode")
+            require(
+                production_image.size == EXPECTED_SIZE,
+                "derived output has unexpected dimensions",
+            )
+            production_image.load()
+    except (OSError, ValueError) as error:
+        raise RuntimeError("derived output is not a valid decodable image") from error
 
-    with Image.open(BytesIO(source_bytes)) as source_image:
-        assert source_image.format == "WEBP", "source must be WebP"
-        assert source_image.size == EXPECTED_SIZE, "unexpected source dimensions"
-        source = source_image.convert("RGB")
+
+def atomic_replace_bytes(path: Path, data: bytes) -> None:
+    temporary_path: Path | None = None
+    try:
+        destination_mode = path.stat().st_mode & 0o777 if path.exists() else 0o644
+        file_descriptor, temporary_name = tempfile.mkstemp(
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+        )
+        temporary_path = Path(temporary_name)
+        with os.fdopen(file_descriptor, "wb") as temporary_file:
+            os.fchmod(temporary_file.fileno(), destination_mode)
+            temporary_file.write(data)
+            temporary_file.flush()
+            os.fsync(temporary_file.fileno())
+        os.replace(temporary_path, path)
+        temporary_path = None
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+
+
+def main() -> None:
+    require(pillow_version == PILLOW_VERSION, "Pillow version mismatch")
+    libwebp_version = features.version("webp")
+    require(libwebp_version == LIBWEBP_VERSION, "libwebp version mismatch")
+    source_bytes = SOURCE_PATH.read_bytes()
+    source_hash = sha256(source_bytes)
+    require(
+        source_hash == SOURCE_SHA256,
+        f"immutable source hash mismatch: {source_hash}",
+    )
+
+    try:
+        with Image.open(BytesIO(source_bytes)) as source_image:
+            require(source_image.format == "WEBP", "source must be WebP")
+            require(source_image.size == EXPECTED_SIZE, "unexpected source dimensions")
+            require(source_image.mode == "RGB", "source must use RGB mode")
+            source_image.load()
+            source = source_image.copy()
+    except (OSError, ValueError) as error:
+        raise RuntimeError("source is not a valid decodable image") from error
 
     backdrop = build_backdrop(source)
     output_bytes = encode(backdrop)
-    assert output_bytes == encode(backdrop), "WebP encoding is not deterministic"
+    require(output_bytes == encode(backdrop), "WebP encoding is not deterministic")
     output_hash = sha256(output_bytes)
-    assert output_hash == OUTPUT_SHA256, f"derived output hash mismatch: {output_hash}"
-    OUTPUT_PATH.write_bytes(output_bytes)
-
-    with Image.open(BytesIO(output_bytes)) as production_image:
-        assert production_image.format == "WEBP"
-        assert production_image.mode == "RGB"
-        assert production_image.size == EXPECTED_SIZE
+    require(
+        output_hash == OUTPUT_SHA256,
+        f"derived output hash mismatch: {output_hash}",
+    )
+    validate_encoded_output(output_bytes)
+    atomic_replace_bytes(OUTPUT_PATH, output_bytes)
 
     print(f"source sha256: {SOURCE_SHA256}")
     print(f"output sha256: {OUTPUT_SHA256}")

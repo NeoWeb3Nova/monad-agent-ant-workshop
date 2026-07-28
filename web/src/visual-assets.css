@@ -1,9 +1,9 @@
-/* Approved colony backdrop layer. App.css owns layout, sizing, typography, and state. */
+/* Source-coordinate targeted redaction is baked into the production asset; CSS adds light atmosphere only. */
 .colony-canvas {
   background-color: var(--surface-root);
   background-image:
-    linear-gradient(180deg, rgba(8, 9, 16, 0.12), rgba(8, 9, 16, 0.34)),
-    radial-gradient(circle at 50% 46%, transparent 34%, rgba(8, 9, 16, 0.3) 100%),
+    linear-gradient(180deg, rgba(8, 9, 16, 0.08), rgba(8, 9, 16, 0.22)),
+    radial-gradient(circle at 50% 46%, transparent 34%, rgba(8, 9, 16, 0.18) 100%),
     url('/colony/antforge-reference-colony.webp'),
     url('/colony/ant-colony-diorama.svg');
   background-position: center;
@@ -11,7 +11,7 @@
   background-size: cover;
 }
 
-/* The production artwork is redacted in pixels. This is global atmosphere only. */
+/* Light global atmosphere only; no artwork blur or coordinate redaction lives in CSS. */
 .colony-canvas::after {
   position: absolute;
   inset: 0;
@@ -19,8 +19,8 @@
   pointer-events: none;
   content: '';
   background:
-    radial-gradient(circle at 50% 16%, rgba(131, 110, 249, 0.1), transparent 22%),
-    linear-gradient(180deg, transparent 72%, rgba(8, 9, 16, 0.2));
+    radial-gradient(circle at 50% 16%, rgba(131, 110, 249, 0.08), transparent 22%),
+    linear-gradient(180deg, transparent 72%, rgba(8, 9, 16, 0.12));
 }
 
 .pheromone-network {

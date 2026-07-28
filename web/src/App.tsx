@@ -45,6 +45,7 @@ import type {
 import { monadTestnet } from "./lib/web3";
 
 const defaultGoal = "Restore one damaged family photograph and recover its story.";
+type DisplayTaskStatus = TaskStatus | "unavailable";
 
 const chamberCopy: Record<Exclude<Skill, "verify" | "rogue">, { title: string; subtitle: string }> = {
   repair: { title: "Repair Chamber", subtitle: "照片修复工坊" },
@@ -110,9 +111,13 @@ function App() {
 
   async function copyContract() {
     if (!snapshot.contractAddress) return;
-    await navigator.clipboard.writeText(snapshot.contractAddress);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1_500);
+    try {
+      await navigator.clipboard.writeText(snapshot.contractAddress);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1_500);
+    } catch {
+      setActionError("Contract address could not be copied. Copy it from Explorer instead.");
+    }
   }
 
   return (
@@ -344,6 +349,13 @@ function ColonyStage({ snapshot }: { snapshot: ColonySnapshot }) {
   const story = snapshot.tasks.find((task) => task.skill === "story");
   const settled = snapshot.tasks.filter((task) => task.status === "settled").length;
   const submitted = snapshot.tasks.filter((task) => task.status === "submitted").length;
+  const guardStatus: DisplayTaskStatus = submitted > 0
+    ? "submitted"
+    : settled > 0
+      ? "settled"
+      : snapshot.tasks.length > 0
+        ? "open"
+        : "unavailable";
 
   return (
     <section
@@ -389,7 +401,7 @@ function ColonyStage({ snapshot }: { snapshot: ColonySnapshot }) {
           <div className="chamber-title">
             <ShieldCheck weight="fill" />
             <span><strong>Guard Chamber</strong><small>守卫验证中心</small></span>
-            <TaskStatusPill status={submitted > 0 ? "submitted" : settled > 0 ? "settled" : "open"} />
+            <TaskStatusPill status={guardStatus} />
           </div>
           <div className="guard-shield"><ShieldCheck weight="duotone" /></div>
           <div className="verification-list">
@@ -408,7 +420,10 @@ function ColonyStage({ snapshot }: { snapshot: ColonySnapshot }) {
             <small>Escrow budget</small>
             <strong>{snapshot.totalBudgetMon} MON</strong>
           </div>
-          <div className="ledger-row"><span>Reward credited</span><strong>{settled}/{snapshot.tasks.length || 3}</strong></div>
+          <div className="ledger-row">
+            <span>Reward credited</span>
+            <strong>{snapshot.tasks.length > 0 ? `${settled}/${snapshot.tasks.length}` : "No tasks"}</strong>
+          </div>
           <div className="ledger-row"><span>Settlement model</span><strong>Pull payment</strong></div>
         </div>
 
@@ -439,8 +454,9 @@ function TaskChamber({
 }) {
   const copy = chamberCopy[skill];
   const IconComponent = skill === "repair" ? ImageSquare : skill === "color" ? PaintBrush : TextT;
+  const displayStatus: DisplayTaskStatus = task?.status ?? "unavailable";
   const proofFallback = !task
-    ? "No task transaction yet"
+    ? "Not created onchain"
     : task.status === "open"
       ? "Awaiting claim"
       : task.transactionHash
@@ -448,11 +464,11 @@ function TaskChamber({
         : "No Explorer transaction";
 
   return (
-    <article className={`task-chamber chamber-position ${className}`} data-status={task?.status ?? "open"}>
+    <article className={`task-chamber chamber-position ${className}`} data-status={displayStatus}>
       <div className="chamber-title">
         <IconComponent weight="fill" />
         <span><strong>{copy.title}</strong><small>{copy.subtitle}</small></span>
-        <TaskStatusPill status={task?.status ?? "open"} />
+        <TaskStatusPill status={displayStatus} />
       </div>
 
       <div className={`artifact-preview artifact-${skill}`}>
@@ -461,8 +477,8 @@ function TaskChamber({
       </div>
 
       <div className="chamber-meta">
-        <span><small>Reward</small><strong>{task?.rewardMon ?? "0.001"} MON</strong></span>
-        <span><small>Worker</small><strong>{task?.workerId ? shorten(task.workerId) : "Unclaimed"}</strong></span>
+        <span><small>Reward</small><strong>{task ? `${task.rewardMon} MON` : "—"}</strong></span>
+        <span><small>Worker</small><strong>{task ? (task.workerId ? shorten(task.workerId) : "Unclaimed") : "—"}</strong></span>
       </div>
 
       {task?.transactionHash && explorerUrl ? (
@@ -577,7 +593,12 @@ function EvidenceSidebar({
 
       <div className="metric-stack">
         <MetricCard icon={<Cube weight="fill" />} label="Network" value={snapshot.networkName} tone="purple" />
-        <MetricCard icon={<CheckCircle weight="fill" />} label="Tasks settled" value={`${settled}/${snapshot.tasks.length || 3}`} tone="green" />
+        <MetricCard
+          icon={<CheckCircle weight="fill" />}
+          label="Tasks settled"
+          value={snapshot.tasks.length > 0 ? `${settled}/${snapshot.tasks.length}` : "No tasks"}
+          tone="green"
+        />
         <MetricCard icon={<LockKey weight="fill" />} label="Escrow budget" value={`${snapshot.totalBudgetMon} MON`} tone="gold" />
         <MetricCard icon={<Clock weight="fill" />} label="Last inclusion" value={latency !== undefined ? `${latency} ms` : "Waiting"} tone="blue" />
         <MetricCard icon={<Pulse weight="fill" />} label="Latest block" value={latestBlock?.toString() ?? "—"} tone="neutral" />
@@ -655,8 +676,8 @@ function StatusBadge({ children, tone }: { children: ReactNode; tone: "green" | 
   return <span className={`status-badge tone-${tone}`}>{children}</span>;
 }
 
-function TaskStatusPill({ status }: { status: TaskStatus }) {
-  return <span className={`task-status status-${status}`}>{status}</span>;
+function TaskStatusPill({ status }: { status: DisplayTaskStatus }) {
+  return <span className={`task-status status-${status}`}>{status === "unavailable" ? "no task" : status}</span>;
 }
 
 interface MetricCardProps {

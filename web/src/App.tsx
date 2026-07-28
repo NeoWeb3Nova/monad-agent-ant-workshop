@@ -80,6 +80,7 @@ function App() {
   const [goal, setGoal] = useState(snapshot.goal || defaultGoal);
   const [actionError, setActionError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { address, chainId, isConnected } = useAccount();
   const { connectors, connect, isPending: isConnecting } = useConnect();
@@ -99,6 +100,7 @@ function App() {
 
   async function releaseSwarm() {
     setActionError("");
+    setIsSubmitting(true);
     try {
       if (!goal.trim()) throw new Error("Describe a goal before releasing the swarm.");
       if (isLive && !isConnected) throw new Error("Connect an injected wallet for Live settlement.");
@@ -106,6 +108,8 @@ function App() {
       await dataSource.releaseSwarm(goal.trim());
     } catch (error) {
       setActionError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -143,7 +147,7 @@ function App() {
           onGoalChange={setGoal}
           onRelease={() => void releaseSwarm()}
           onReset={() => dataSource.reset()}
-          running={snapshot.isRunning}
+          running={snapshot.isRunning || isSubmitting}
           snapshot={snapshot}
           wrongNetwork={wrongNetwork}
         />

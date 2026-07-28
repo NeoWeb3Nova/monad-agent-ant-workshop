@@ -250,7 +250,8 @@ export class MonadColonyDataSource implements ColonyDataSource {
       inclusionLatencyMs: receiptAtMs - sentAtMs,
       gasLimit: transaction.gas,
     });
-    await this.refresh();
+    if (this.refreshInFlight) await this.refreshInFlight;
+    await this.loadSnapshot();
   }
 
   private async loadSnapshot(): Promise<void> {

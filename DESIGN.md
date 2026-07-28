@@ -64,4 +64,4 @@ Do not ship hard-coded placeholder addresses presented as connected or Live, fak
 
 ## Responsive rules
 
-At 1440×900 and larger, keep the roadshow cockpit in one viewport. Below 1180px, switch to a vertical document flow with Mission, Colony, Workflow, and Evidence. At 375px, preserve 44px controls, 16px form text, no horizontal page overflow, and a scrollable Colony Stage rather than unreadable overlays.
+At 1440×900 and larger, keep the roadshow cockpit in one viewport. At 1370px and below, switch to a vertical document flow with Mission, Colony, Workflow, and Evidence; this content-driven breakpoint prevents settled node cards from colliding around 1280px without shrinking text. At 640px and below, preserve 44px controls, 16px form text, and no horizontal page overflow. The Colony Stage keeps a 680px internal canvas with horizontal stage scrolling so every node stays readable rather than being compressed.

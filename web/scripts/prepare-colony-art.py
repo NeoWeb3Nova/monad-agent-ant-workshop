@@ -276,6 +276,7 @@ def validate_redaction_configuration() -> None:
     width, height = EXPECTED_SIZE
     region_names = tuple(region.name for region in REDACTION_REGIONS)
     actual_names = frozenset(region_names)
+    regions_by_name = {region.name: region for region in REDACTION_REGIONS}
     require(
         len(region_names) == len(actual_names),
         "redaction region names must be unique",
@@ -323,6 +324,11 @@ def validate_redaction_configuration() -> None:
         require(
             isinstance(x, int) and isinstance(y, int) and 0 <= x < width and 0 <= y < height,
             f"out-of-bounds evidence target for {name}: {point}",
+        )
+        named_region_value = render_mask((regions_by_name[name],)).getpixel(point)
+        require(
+            isinstance(named_region_value, int) and named_region_value >= 240,
+            f"evidence target is outside its named region {name}: {point}",
         )
 
     require(

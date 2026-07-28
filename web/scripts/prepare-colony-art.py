@@ -8,54 +8,130 @@ from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
 
-from PIL import Image, ImageChops, ImageDraw, ImageFilter, __version__ as pillow_version
+from PIL import (
+    Image,
+    ImageChops,
+    ImageDraw,
+    ImageFilter,
+    ImageStat,
+    __version__ as pillow_version,
+)
 
 WEB_ROOT = Path(__file__).resolve().parents[1]
 SOURCE_PATH = WEB_ROOT / "public/colony/antforge-reference-colony-source.webp"
 OUTPUT_PATH = WEB_ROOT / "public/colony/antforge-reference-colony.webp"
 
 SOURCE_SHA256 = "394b6bb0e47c40449131fbe29a515c49ba01394a2aa3b7e9b412bbd8c6ec7ab5"
-OUTPUT_SHA256 = "0e5900205d7fb1889dcdde53795670a53766bdfadd4107a72f50aa7a324aabdf"
+OUTPUT_SHA256 = "693d0bb66aee5c9a39fd3db7491a8417476a074c2c5b9568299a9d793e10819b"
 PILLOW_VERSION = "12.1.1"
 EXPECTED_SIZE = (512, 356)
-LOCAL_BLUR_RADIUS = 8
-MASK_FEATHER_RADIUS = 4
+LOCAL_BLUR_RADIUS = 10
+STRONG_BLUR_RADIUS = 12
+CRITICAL_BLUR_RADIUS = 18
+MASK_FEATHER_RADIUS = 6
+MASK_MIN_ALPHA = 28
 BLEND_COLOR = "#080910"
-LOCAL_BLEND_AMOUNT = 0.76
+LOCAL_BLEND_AMOUNT = 0.30
+STRONG_BLEND_AMOUNT = 0.48
+CRITICAL_BLEND_AMOUNT = 0.52
 WEBP_QUALITY = 90
 WEBP_METHOD = 6
+MAX_MASK_NONZERO_PERCENT = 70.0
+MAX_MASK_STRONG_PERCENT = 55.0
+MIN_LUMINANCE_STDDEV_RATIO = 0.35
 
 
 @dataclass(frozen=True)
 class RedactionRegion:
+    name: str
     box: tuple[int, int, int, int]
     radius: int
 
 
-# The queen label bounds extend beyond the initial (216, 66, 302, 99) region
-# because its feathered edge left the title readable during visual inspection.
+# Each mask follows a synthetic element rather than a chamber boundary. Organic
+# gaps between panels retain their source pixels and keep the cave visually rich.
 REDACTION_REGIONS = (
-    RedactionRegion((18, 18, 224, 132), 18),  # image chamber
-    RedactionRegion((216, 60, 302, 105), 10),  # queen label
-    RedactionRegion((322, 18, 506, 133), 18),  # LLM chamber
-    RedactionRegion((12, 133, 242, 249), 18),  # guard chamber
-    RedactionRegion((322, 134, 508, 261), 18),  # treasury chamber
-    RedactionRegion((10, 250, 250, 356), 18),  # storage chamber
-    RedactionRegion((278, 272, 392, 311), 12),  # scout label
-    RedactionRegion((393, 272, 511, 311), 12),  # worker label
+    RedactionRegion("image title/status", (40, 26, 166, 62), 8),
+    RedactionRegion("image preview left", (23, 62, 60, 94), 5),
+    RedactionRegion("image preview middle", (63, 63, 94, 92), 5),
+    RedactionRegion("image preview small", (101, 69, 129, 92), 5),
+    RedactionRegion("image preview right", (148, 63, 182, 95), 5),
+    RedactionRegion("image footer left", (20, 102, 68, 131), 5),
+    RedactionRegion("image footer middle", (70, 102, 142, 131), 5),
+    RedactionRegion("image footer right", (144, 102, 196, 131), 5),
+    RedactionRegion("image footer control", (198, 102, 226, 131), 5),
+    RedactionRegion("queen title/status", (210, 60, 307, 108), 8),
+    RedactionRegion("llm title/status", (349, 26, 470, 62), 8),
+    RedactionRegion("llm code panel", (328, 57, 398, 113), 7),
+    RedactionRegion("llm preview left", (401, 67, 431, 97), 5),
+    RedactionRegion("llm preview middle", (440, 67, 469, 97), 5),
+    RedactionRegion("llm preview right", (477, 67, 508, 98), 5),
+    RedactionRegion("llm footer type", (392, 108, 421, 132), 5),
+    RedactionRegion("llm footer chat", (421, 108, 450, 132), 5),
+    RedactionRegion("llm footer document", (450, 108, 480, 132), 5),
+    RedactionRegion("llm footer control", (480, 108, 508, 132), 5),
+    RedactionRegion("guard title/status", (39, 143, 164, 180), 8),
+    RedactionRegion("guard left display", (22, 178, 68, 212), 6),
+    RedactionRegion("guard worker display", (75, 189, 111, 217), 6),
+    RedactionRegion("guard shield panel", (108, 173, 184, 228), 8),
+    RedactionRegion("guard footer quality", (18, 220, 78, 249), 6),
+    RedactionRegion("guard footer content", (81, 220, 153, 249), 6),
+    RedactionRegion("guard footer proof", (156, 220, 241, 249), 6),
+    RedactionRegion("treasury title/status", (349, 143, 471, 181), 8),
+    RedactionRegion("treasury hex control", (441, 172, 491, 213), 9),
+    RedactionRegion("treasury balance/chart", (338, 213, 512, 266), 8),
+    RedactionRegion("storage title/status", (38, 261, 172, 298), 8),
+    RedactionRegion("storage shelves left", (18, 292, 82, 316), 5),
+    RedactionRegion("storage shelves middle-left", (88, 284, 143, 316), 5),
+    RedactionRegion("storage shelves middle-right", (151, 284, 202, 316), 5),
+    RedactionRegion("storage shelves right", (209, 291, 242, 316), 5),
+    RedactionRegion("storage footer artifacts", (20, 322, 80, 356), 5),
+    RedactionRegion("storage footer memories", (86, 322, 162, 356), 5),
+    RedactionRegion("storage footer size", (168, 322, 244, 356), 5),
+    RedactionRegion("scout title/count", (276, 269, 395, 314), 8),
+    RedactionRegion("worker title/count", (392, 269, 512, 314), 8),
 )
 
 PROTECTED_POINTS = (
-    (256, 36),  # crystal
-    (256, 120),  # upper center tunnel
-    (256, 220),  # lower center tunnel
+    (256, 36),  # queen crystal
+    (256, 120),  # upper center spine
+    (256, 220),  # lower center spine
+    (264, 335),  # bottom spine edge beside the storage footer
+    (203, 146),  # image/guard cave boundary
+    (308, 146),  # LLM/treasury cave boundary
+    (399, 199),  # treasury coins and warm light
+    (287, 137),  # upper tunnel edge and purple light
     (335, 330),  # scout ants
     (455, 330),  # worker ants
 )
-TARGET_POINTS = (
-    (70, 42),  # image title
-    (370, 42),  # LLM title
-    (382, 218),  # treasury UI
+TARGET_POINTS = tuple(
+    (region.name, ((region.box[0] + region.box[2]) // 2, (region.box[1] + region.box[3]) // 2))
+    for region in REDACTION_REGIONS
+)
+
+FORMER_CHAMBER_REGIONS = (
+    ("image", (18, 18, 224, 132)),
+    ("llm", (322, 18, 506, 133)),
+    ("guard", (12, 133, 242, 249)),
+    ("treasury", (322, 134, 508, 261)),
+    ("storage", (10, 250, 250, 356)),
+)
+
+STRONG_REDACTION_NAMES = frozenset(
+    region.name
+    for region in REDACTION_REGIONS
+    if "title/" in region.name
+    or "footer" in region.name
+    or region.name in {"llm code panel", "treasury balance/chart"}
+)
+
+CRITICAL_REDACTION_NAMES = frozenset(
+    {
+        "guard title/status",
+        "treasury title/status",
+        "treasury balance/chart",
+        "storage title/status",
+    }
 )
 
 
@@ -63,22 +139,38 @@ def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def build_redaction_mask() -> Image.Image:
+def render_mask(regions: tuple[RedactionRegion, ...]) -> Image.Image:
     mask = Image.new("L", EXPECTED_SIZE, 0)
     draw = ImageDraw.Draw(mask)
-    for region in REDACTION_REGIONS:
+    for region in regions:
         draw.rounded_rectangle(region.box, radius=region.radius, fill=255)
     mask = mask.filter(ImageFilter.GaussianBlur(radius=MASK_FEATHER_RADIUS))
+    return mask.point([0 if value < MASK_MIN_ALPHA else value for value in range(256)])
+
+
+def build_redaction_mask() -> Image.Image:
+    mask = render_mask(REDACTION_REGIONS)
 
     assert mask.mode == "L"
     assert mask.size == EXPECTED_SIZE
     for point in PROTECTED_POINTS:
         value = mask.getpixel(point)
         assert isinstance(value, int) and value == 0, f"redaction mask leaked into {point}"
-    for point in TARGET_POINTS:
+    for name, point in TARGET_POINTS:
         value = mask.getpixel(point)
-        assert isinstance(value, int) and value > 0, f"redaction mask missed {point}"
+        assert isinstance(value, int) and value >= 240, f"redaction mask missed {name} at {point}"
+
+    histogram = mask.histogram()
+    pixel_count = EXPECTED_SIZE[0] * EXPECTED_SIZE[1]
+    nonzero_percent = 100 * (pixel_count - histogram[0]) / pixel_count
+    strong_percent = 100 * sum(histogram[128:]) / pixel_count
+    assert nonzero_percent < MAX_MASK_NONZERO_PERCENT, "redaction mask is too broad"
+    assert strong_percent < MAX_MASK_STRONG_PERCENT, "strong redaction mask is too broad"
     return mask
+
+
+def luminance_stddev(image: Image.Image, box: tuple[int, int, int, int]) -> float:
+    return ImageStat.Stat(image.crop(box).convert("L")).stddev[0]
 
 
 def build_backdrop(source: Image.Image) -> Image.Image:
@@ -94,6 +186,30 @@ def build_backdrop(source: Image.Image) -> Image.Image:
     )
     backdrop = Image.composite(local_redaction, source, mask)
 
+    strong_regions = tuple(
+        region for region in REDACTION_REGIONS if region.name in STRONG_REDACTION_NAMES
+    )
+    strong_mask = render_mask(strong_regions)
+    strong_blur = source.filter(ImageFilter.GaussianBlur(radius=STRONG_BLUR_RADIUS))
+    strong_redaction = Image.blend(
+        strong_blur,
+        Image.new("RGB", EXPECTED_SIZE, BLEND_COLOR),
+        STRONG_BLEND_AMOUNT,
+    )
+    backdrop = Image.composite(strong_redaction, backdrop, strong_mask)
+
+    critical_regions = tuple(
+        region for region in REDACTION_REGIONS if region.name in CRITICAL_REDACTION_NAMES
+    )
+    critical_mask = render_mask(critical_regions)
+    critical_blur = source.filter(ImageFilter.GaussianBlur(radius=CRITICAL_BLUR_RADIUS))
+    critical_redaction = Image.blend(
+        critical_blur,
+        Image.new("RGB", EXPECTED_SIZE, BLEND_COLOR),
+        CRITICAL_BLEND_AMOUNT,
+    )
+    backdrop = Image.composite(critical_redaction, backdrop, critical_mask)
+
     assert backdrop.mode == "RGB"
     assert backdrop.size == EXPECTED_SIZE
     outside_selector = mask.point(lambda value: 255 if value == 0 else 0)
@@ -103,6 +219,12 @@ def build_backdrop(source: Image.Image) -> Image.Image:
         outside_selector,
     )
     assert outside_difference.getbbox() is None, "pixels outside the mask changed"
+    for name, box in FORMER_CHAMBER_REGIONS:
+        source_stddev = luminance_stddev(source, box)
+        backdrop_stddev = luminance_stddev(backdrop, box)
+        assert backdrop_stddev >= source_stddev * MIN_LUMINANCE_STDDEV_RATIO, (
+            f"{name} chamber texture collapsed: {source_stddev:.2f} -> {backdrop_stddev:.2f}"
+        )
     return backdrop
 
 
@@ -145,6 +267,8 @@ def main() -> None:
         f"transform: RGB, local GaussianBlur({LOCAL_BLUR_RADIUS}), "
         f"mask feather GaussianBlur({MASK_FEATHER_RADIUS}), "
         f"local blend({BLEND_COLOR}, {LOCAL_BLEND_AMOUNT:.2f}), "
+        f"strong blur/blend({STRONG_BLUR_RADIUS}, {STRONG_BLEND_AMOUNT:.2f}), "
+        f"critical blur/blend({CRITICAL_BLUR_RADIUS}, {CRITICAL_BLEND_AMOUNT:.2f}), "
         f"WebP quality={WEBP_QUALITY} method={WEBP_METHOD}"
     )
 

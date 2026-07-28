@@ -79,11 +79,6 @@ async function main(): Promise<void> {
   ]);
 
   const backfillToBlock = await publicClient.getBlockNumber();
-  const historicalLogs = await getTaskCreatedLogs(fromBlock, backfillToBlock);
-  for (const log of historicalLogs) {
-    dispatchTaskLog(log.args.taskId, log.args.skill, swarm);
-  }
-
   console.log(
     JSON.stringify({
       event: "runner-ready",
@@ -92,7 +87,7 @@ async function main(): Promise<void> {
       pollingIntervalMs,
       fromBlock: fromBlock.toString(),
       backfillToBlock: backfillToBlock.toString(),
-      replayedTasks: historicalLogs.length,
+      backfill: fromBlock < backfillToBlock ? "running-in-background" : "current",
       workers: swarm.workers.map((worker) => ({
         role: worker.role,
         address: worker.address,
@@ -123,6 +118,11 @@ async function main(): Promise<void> {
     }
   };
   pollTimer = setTimeout(pollTaskCreated, 0);
+  if (fromBlock <= backfillToBlock) {
+    void replayHistoricalTasks(fromBlock, backfillToBlock, swarm).catch((error) => {
+      console.error(`TaskCreated backfill error: ${renderError(error)}`);
+    });
+  }
 
   const shutdown = (signal: string) => {
     console.log(`Stopping AntForge runner after ${signal}`);
@@ -196,6 +196,36 @@ async function getTaskCreatedLogs(fromBlock: bigint, toBlock: bigint) {
     for (const chunkLogs of batchLogs) logs.push(...chunkLogs);
   }
   return logs;
+}
+
+async function replayHistoricalTasks(
+  fromBlock: bigint,
+  toBlock: bigint,
+  swarm: ReturnType<typeof loadSwarmWallets>,
+): Promise<void> {
+  let replayedTasks = 0;
+  for (let batchEnd = toBlock; batchEnd >= fromBlock;) {
+    const batchStart =
+      batchEnd - (MAX_LOG_BLOCK_RANGE * BigInt(MAX_CONCURRENT_LOG_REQUESTS)) + 1n > fromBlock
+        ? batchEnd - (MAX_LOG_BLOCK_RANGE * BigInt(MAX_CONCURRENT_LOG_REQUESTS)) + 1n
+        : fromBlock;
+    const logs = await getTaskCreatedLogs(batchStart, batchEnd);
+    for (const log of logs) {
+      dispatchTaskLog(log.args.taskId, log.args.skill, swarm);
+    }
+    replayedTasks += logs.length;
+    if (batchStart === fromBlock) break;
+    batchEnd = batchStart - 1n;
+    await new Promise((resolveDelay) => setTimeout(resolveDelay, pollingIntervalMs));
+  }
+  console.log(
+    JSON.stringify({
+      event: "runner-backfill-complete",
+      fromBlock: fromBlock.toString(),
+      toBlock: toBlock.toString(),
+      replayedTasks,
+    }),
+  );
 }
 
 function dispatchTaskLog(

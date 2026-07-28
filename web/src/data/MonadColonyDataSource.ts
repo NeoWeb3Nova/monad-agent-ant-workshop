@@ -139,6 +139,8 @@ export class MonadColonyDataSource implements ColonyDataSource {
   private nextLogBlock?: bigint;
   private intervalId?: number;
   private refreshInFlight?: Promise<void>;
+  private loadVersion = 0;
+  private transactionPending = false;
 
   getSnapshot(): ColonySnapshot {
     return this.snapshot;
@@ -159,11 +161,14 @@ export class MonadColonyDataSource implements ColonyDataSource {
   }
 
   async refresh(): Promise<void> {
+    if (this.transactionPending) return;
     if (this.refreshInFlight) return this.refreshInFlight;
-    this.refreshInFlight = this.loadSnapshot().finally(() => {
-      this.refreshInFlight = undefined;
+    const version = this.loadVersion;
+    const refresh = this.loadSnapshot(version).finally(() => {
+      if (this.refreshInFlight === refresh) this.refreshInFlight = undefined;
     });
-    return this.refreshInFlight;
+    this.refreshInFlight = refresh;
+    return refresh;
   }
 
   reset(): void {
@@ -227,43 +232,83 @@ export class MonadColonyDataSource implements ColonyDataSource {
       args: [colonyId, tasks, verifier] as const,
       value: reward * BigInt(tasks.length),
       account: requester,
+      chainId: monadTestnet.id,
     };
 
     await publicClient.simulateContract(parameters);
     const sentAtMs = Date.now();
     const sentAt = new Date(sentAtMs).toISOString();
     const transactionHash = await writeContract(wagmiConfig, parameters);
-    const receipt = await waitForTransactionReceipt(wagmiConfig, {
-      hash: transactionHash,
-      confirmations: 1,
-      timeout: 120_000,
-    });
-    const receiptAtMs = Date.now();
-    const transaction = await publicClient.getTransaction({ hash: transactionHash });
-    if (receipt.status !== "success") {
-      throw new Error(`createColony reverted: ${transactionHash}`);
-    }
+    this.loadVersion += 1;
+    this.refreshInFlight = undefined;
+    this.transactionPending = true;
+    this.snapshot = {
+      ...emptyLiveSnapshot(contractAddress),
+      goal,
+      colonyId,
+      totalBudgetMon: formatEther(parameters.value),
+      isRunning: true,
+      swarmLane: {
+        state: "running",
+        summary: "Colony transaction broadcast. Waiting for Monad confirmation.",
+      },
+      events: [
+        {
+          id: `${transactionHash}-pending`,
+          at: sentAt,
+          title: "Colony transaction broadcast",
+          detail: "Wallet approval completed. Waiting for the Monad transaction receipt.",
+          tone: "neutral",
+          transactionHash,
+        },
+      ],
+    };
+    this.emit();
+    try {
+      const receipt = await waitForTransactionReceipt(wagmiConfig, {
+        hash: transactionHash,
+        confirmations: 1,
+        timeout: 120_000,
+      });
+      const receiptAtMs = Date.now();
+      const transaction = await publicClient.getTransaction({ hash: transactionHash });
+      if (receipt.status !== "success") {
+        throw new Error(`createColony reverted: ${transactionHash}`);
+      }
 
-    this.localMetrics.set(transactionHash, {
-      sentAt,
-      receiptAt: new Date(receiptAtMs).toISOString(),
-      inclusionLatencyMs: receiptAtMs - sentAtMs,
-      gasLimit: transaction.gas,
-    });
-    if (this.refreshInFlight) await this.refreshInFlight;
-    await this.loadSnapshot();
+      this.localMetrics.set(transactionHash, {
+        sentAt,
+        receiptAt: new Date(receiptAtMs).toISOString(),
+        inclusionLatencyMs: receiptAtMs - sentAtMs,
+        gasLimit: transaction.gas,
+      });
+      this.historicalLogs.length = 0;
+      this.historicalLogs.push(
+        ...receipt.logs.filter(
+          (log) => log.address.toLowerCase() === contractAddress.toLowerCase(),
+        ),
+      );
+      this.historicalLogsDirty = true;
+      this.nextLogBlock = receipt.blockNumber + 1n;
+    } finally {
+      this.transactionPending = false;
+    }
+    await this.refresh();
   }
 
-  private async loadSnapshot(): Promise<void> {
+  private async loadSnapshot(version: number): Promise<void> {
     const contractAddress = readContractAddress();
     if (!contractAddress) {
-      this.setError("VITE_ANT_COLONY_ADDRESS is missing. Live Mode did not fall back to Mock.");
+      if (version === this.loadVersion) {
+        this.setError("VITE_ANT_COLONY_ADDRESS is missing. Live Mode did not fall back to Mock.");
+      }
       return;
     }
 
     try {
       if (!this.contractReady) {
         const code = await publicClient.getBytecode({ address: contractAddress });
+        if (version !== this.loadVersion) return;
         if (!code || code === "0x") {
           throw new Error(`No contract bytecode at ${contractAddress} on Monad Testnet.`);
         }
@@ -275,6 +320,7 @@ export class MonadColonyDataSource implements ColonyDataSource {
       }
       const fromBlock = BigInt(deploymentBlock);
       const latestBlock = await publicClient.getBlockNumber();
+      if (version !== this.loadVersion) return;
       if (fromBlock > latestBlock) {
         throw new Error(`VITE_DEPLOYMENT_BLOCK ${fromBlock} is ahead of block ${latestBlock}.`);
       }
@@ -302,6 +348,7 @@ export class MonadColonyDataSource implements ColonyDataSource {
             }),
           ),
         );
+        if (version !== this.loadVersion) return;
         for (let batchIndex = 0; batchIndex < batch.length; batchIndex += 1) {
           const range = batch[batchIndex]!;
           const logs = batchLogs[batchIndex]!;
@@ -365,6 +412,7 @@ export class MonadColonyDataSource implements ColonyDataSource {
           }),
         })),
       );
+      if (version !== this.loadVersion) return;
       const colonyTasks = taskReads.filter(
         ({ state }) => state[0] === latestColony.args.colonyId,
       );
@@ -450,7 +498,7 @@ export class MonadColonyDataSource implements ColonyDataSource {
       this.historicalLogsDirty = false;
       this.emit();
     } catch (error) {
-      this.setError(displayError(error));
+      if (version === this.loadVersion) this.setError(displayError(error));
     }
   }
 

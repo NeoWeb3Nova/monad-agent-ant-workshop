@@ -519,8 +519,8 @@ function PheromoneNetwork({ tasks, rogue }: { tasks: TaskView[]; rogue: LaneOutc
     { id: "repair-guard", path: "M224 220 C310 315 390 365 500 405", active: repair.submitted, settled: repair.settled, error: false },
     { id: "color-guard", path: "M780 220 C690 310 610 365 500 405", active: color.submitted, settled: color.settled, error: false },
     { id: "story-guard", path: "M220 475 C325 470 410 445 500 405", active: story.submitted, settled: story.settled, error: false },
-    { id: "guard-treasury", path: "M500 405 C610 465 690 485 790 495", active: treasuryActive, settled: treasurySettled, error: false },
-    { id: "rogue-repair", path: "M500 655 C430 535 320 350 224 220", active: rogue.state === "running", settled: false, error: rogue.state === "passed" },
+    { id: "guard-treasury", path: "M250 350 C400 430 590 430 740 350", active: treasuryActive, settled: treasurySettled, error: false },
+    { id: "rogue-repair", path: "M720 574 C590 520 390 310 250 196", active: rogue.state === "running", settled: false, error: rogue.state === "passed" },
   ];
 
   return (

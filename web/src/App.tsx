@@ -28,6 +28,7 @@ import {
   useMemo,
   useState,
   useSyncExternalStore,
+  type CSSProperties,
   type ReactNode,
 } from "react";
 import { useAccount, useConnect, useDisconnect, useSwitchChain } from "wagmi";
@@ -52,6 +53,23 @@ const chamberCopy: Record<Exclude<Skill, "verify" | "rogue">, { title: string; s
   color: { title: "Color Chamber", subtitle: "图像上色工坊" },
   story: { title: "Story Chamber", subtitle: "记忆叙事工坊" },
 };
+
+const colonyLayout = {
+  queen: { x: 500, y: 98 },
+  repair: { x: 250, y: 196 },
+  color: { x: 740, y: 196 },
+  story: { x: 240, y: 476 },
+  guard: { x: 250, y: 350 },
+  treasury: { x: 740, y: 350 },
+  rogue: { x: 720, y: 574 },
+} as const;
+
+type ColonyNode = keyof typeof colonyLayout;
+
+function colonyNodeStyle(node: ColonyNode): CSSProperties {
+  const { x, y } = colonyLayout[node];
+  return { left: `${x / 10}%`, top: `${y / 7}%` };
+}
 
 interface WorkflowStepDefinition {
   number: string;
@@ -375,7 +393,7 @@ function ColonyStage({ snapshot }: { snapshot: ColonySnapshot }) {
 
         <PheromoneNetwork tasks={snapshot.tasks} rogue={snapshot.skillGuardLane} />
 
-        <div className="queen-core chamber-position queen-position">
+        <div className="queen-core chamber-position queen-position" style={colonyNodeStyle("queen")}>
           <div className="queen-crystal"><CrownSimple weight="fill" /></div>
           <strong>Queen Core</strong>
           <span>蚁后中枢</span>
@@ -386,22 +404,25 @@ function ColonyStage({ snapshot }: { snapshot: ColonySnapshot }) {
           className="repair-position"
           explorerUrl={snapshot.explorerUrl}
           skill="repair"
+          style={colonyNodeStyle("repair")}
           task={repair}
         />
         <TaskChamber
           className="color-position"
           explorerUrl={snapshot.explorerUrl}
           skill="color"
+          style={colonyNodeStyle("color")}
           task={color}
         />
         <TaskChamber
           className="story-position"
           explorerUrl={snapshot.explorerUrl}
           skill="story"
+          style={colonyNodeStyle("story")}
           task={story}
         />
 
-        <div className="guard-chamber chamber-position guard-position">
+        <div className="guard-chamber chamber-position guard-position" style={colonyNodeStyle("guard")}>
           <div className="chamber-title">
             <ShieldCheck weight="fill" />
             <span><strong>Guard Chamber</strong><small>守卫验证中心</small></span>
@@ -415,7 +436,7 @@ function ColonyStage({ snapshot }: { snapshot: ColonySnapshot }) {
           </div>
         </div>
 
-        <div className="treasury-chamber chamber-position treasury-position">
+        <div className="treasury-chamber chamber-position treasury-position" style={colonyNodeStyle("treasury")}>
           <div className="chamber-title">
             <Cube weight="fill" />
             <span><strong>Treasury Chamber</strong><small>链上金库</small></span>
@@ -431,7 +452,11 @@ function ColonyStage({ snapshot }: { snapshot: ColonySnapshot }) {
           <div className="ledger-row"><span>Settlement model</span><strong>Pull payment</strong></div>
         </div>
 
-        <div className="rogue-gate chamber-position rogue-position" data-state={snapshot.skillGuardLane.state}>
+        <div
+          className="rogue-gate chamber-position rogue-position"
+          data-state={snapshot.skillGuardLane.state}
+          style={colonyNodeStyle("rogue")}
+        >
           <WarningCircle weight="fill" />
           <span><strong>Rogue Gate</strong><small>{snapshot.skillGuardLane.summary}</small></span>
         </div>
@@ -449,11 +474,13 @@ function TaskChamber({
   className,
   explorerUrl,
   skill,
+  style,
   task,
 }: {
   className: string;
   explorerUrl?: string;
   skill: Exclude<Skill, "verify" | "rogue">;
+  style: CSSProperties;
   task?: TaskView;
 }) {
   const copy = chamberCopy[skill];
@@ -468,7 +495,7 @@ function TaskChamber({
         : "No Explorer transaction";
 
   return (
-    <article className={`task-chamber chamber-position ${className}`} data-status={displayStatus}>
+    <article className={`task-chamber chamber-position ${className}`} data-status={displayStatus} style={style}>
       <div className="chamber-title">
         <IconComponent weight="fill" />
         <span><strong>{copy.title}</strong><small>{copy.subtitle}</small></span>
@@ -515,16 +542,17 @@ function PheromoneNetwork({ tasks, rogue }: { tasks: TaskView[]; rogue: LaneOutc
   const story = routeState("story");
   const treasuryActive = tasks.some((task) => task.status === "submitted");
   const treasurySettled = !treasuryActive && tasks.some((task) => task.status === "settled");
+  const { queen, repair: repairNode, color: colorNode, story: storyNode, guard, treasury, rogue: rogueNode } = colonyLayout;
 
   const routes = [
-    { id: "queen-repair", path: "M500 118 C420 150 340 175 224 220", ...repair, error: false },
-    { id: "queen-color", path: "M500 118 C585 148 655 175 780 220", ...color, error: false },
-    { id: "queen-story", path: "M500 118 C395 245 300 350 220 475", ...story, error: false },
-    { id: "repair-guard", path: "M224 220 C310 315 390 365 500 405", active: repair.submitted, settled: repair.settled, error: false },
-    { id: "color-guard", path: "M780 220 C690 310 610 365 500 405", active: color.submitted, settled: color.settled, error: false },
-    { id: "story-guard", path: "M220 475 C325 470 410 445 500 405", active: story.submitted, settled: story.settled, error: false },
-    { id: "guard-treasury", path: "M250 350 C400 430 590 430 740 350", active: treasuryActive, settled: treasurySettled, error: false },
-    { id: "rogue-repair", path: "M720 574 C590 520 390 310 250 196", active: rogue.state === "running", settled: false, error: rogue.state === "passed" },
+    { id: "queen-repair", path: `M${queen.x} ${queen.y} C410 110 330 150 ${repairNode.x} ${repairNode.y}`, ...repair, error: false },
+    { id: "queen-color", path: `M${queen.x} ${queen.y} C590 110 660 150 ${colorNode.x} ${colorNode.y}`, ...color, error: false },
+    { id: "queen-story", path: `M${queen.x} ${queen.y} C380 210 300 360 ${storyNode.x} ${storyNode.y}`, ...story, error: false },
+    { id: "repair-guard", path: `M${repairNode.x} ${repairNode.y} C250 245 250 300 ${guard.x} ${guard.y}`, active: repair.submitted, settled: repair.settled, error: false },
+    { id: "color-guard", path: `M${colorNode.x} ${colorNode.y} C590 215 420 300 ${guard.x} ${guard.y}`, active: color.submitted, settled: color.settled, error: false },
+    { id: "story-guard", path: `M${storyNode.x} ${storyNode.y} C240 430 245 390 ${guard.x} ${guard.y}`, active: story.submitted, settled: story.settled, error: false },
+    { id: "guard-treasury", path: `M${guard.x} ${guard.y} C400 390 590 390 ${treasury.x} ${treasury.y}`, active: treasuryActive, settled: treasurySettled, error: false },
+    { id: "rogue-guard", path: `M${rogueNode.x} ${rogueNode.y} C600 560 410 460 ${guard.x} ${guard.y}`, active: rogue.state === "running", settled: false, error: rogue.state === "passed" },
   ];
 
   return (

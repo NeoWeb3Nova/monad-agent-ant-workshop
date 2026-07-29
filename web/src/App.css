@@ -738,14 +738,6 @@ button:disabled {
   transform: translate(-50%, -50%);
 }
 
-.queen-position { left: 50%; top: 14%; }
-.repair-position { left: 25%; top: 28%; }
-.color-position { left: 74%; top: 28%; }
-.story-position { left: 24%; top: 68%; }
-.guard-position { left: 25%; top: 50%; }
-.treasury-position { left: 74%; top: 50%; }
-.rogue-position { left: 72%; top: 82%; }
-
 .queen-core,
 .task-chamber,
 .guard-chamber,
@@ -1622,14 +1614,6 @@ button:disabled {
     min-width: 680px;
     height: 758px;
   }
-
-  .queen-position { left: 25%; top: 12%; }
-  .repair-position { left: 25%; top: 26%; }
-  .color-position { left: 75%; top: 26%; }
-  .guard-position { left: 25%; top: 50%; }
-  .treasury-position { left: 75%; top: 50%; }
-  .story-position { left: 25%; top: 74%; }
-  .rogue-position { left: 75%; top: 87%; }
 
   .task-chamber,
   .guard-chamber,

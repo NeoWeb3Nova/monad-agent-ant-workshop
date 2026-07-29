@@ -29,6 +29,7 @@ import type {
   TaskStatus,
   TaskView,
 } from "../domain";
+import { formatUnknownError } from "../lib/errors";
 import {
   monadExplorerUrl,
   monadRpcUrl,
@@ -94,14 +95,6 @@ function skillFromBits(bits: bigint): Skill {
   return "rogue";
 }
 
-function displayError(error: unknown): string {
-  if (error instanceof Error) {
-    const withShortMessage = error as Error & { shortMessage?: string };
-    return withShortMessage.shortMessage ?? error.message;
-  }
-  return String(error);
-}
-
 interface WalletRpcProvider {
   request(args: { method: string; params?: readonly unknown[] }): Promise<unknown>;
 }
@@ -116,7 +109,7 @@ function isWalletRpcProvider(value: unknown): value is WalletRpcProvider {
 }
 
 function isMissingTransactionCountMethod(error: unknown): boolean {
-  const message = displayError(error).toLowerCase();
+  const message = formatUnknownError(error).toLowerCase();
   return message.includes("eth_gettransactioncount")
     && (message.includes("does not exist")
       || message.includes("not available")
@@ -162,7 +155,7 @@ async function ensureWalletRpcReady(
     throw new Error(
       `Your wallet's Monad Testnet RPC cannot prepare transactions. `
         + `Change the network RPC URL to ${monadRpcUrl}, then retry. `
-        + `Wallet response: ${displayError(error)}`,
+        + `Wallet response: ${formatUnknownError(error)}`,
     );
   }
 }
@@ -567,7 +560,7 @@ export class MonadColonyDataSource implements ColonyDataSource {
       this.historicalLogsDirty = false;
       this.emit();
     } catch (error) {
-      if (version === this.loadVersion) this.setError(displayError(error));
+      if (version === this.loadVersion) this.setError(formatUnknownError(error));
     }
   }
 

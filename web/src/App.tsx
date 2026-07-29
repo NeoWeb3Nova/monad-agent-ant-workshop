@@ -43,6 +43,7 @@ import type {
   TaskStatus,
   TaskView,
 } from "./domain";
+import { formatUnknownError } from "./lib/errors";
 import { monadTestnet } from "./lib/web3";
 
 const defaultGoal = "Restore one damaged family photograph and recover its story.";
@@ -125,7 +126,7 @@ function App() {
       if (wrongNetwork) await switchChainAsync({ chainId: monadTestnet.id });
       await dataSource.releaseSwarm(goal.trim());
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : String(error));
+      setActionError(formatUnknownError(error));
     } finally {
       setIsSubmitting(false);
     }

@@ -46,13 +46,13 @@ Use a 4px base rhythm with 8, 12, 16, 20, and 24px steps. Desktop side rails are
 
 - Header: brand, product line, mode, Runner, contract, wallet.
 - Mission Console: goal, fixed task preview, escrow, one primary action, progress.
-- Colony Stage: target-redacted sharp production artwork at `web/public/colony/antforge-reference-colony.webp`; six state overlays—Queen, Repair, Color, Story, Guard, Treasury—and state-driven pheromone paths.
+- Colony Stage: sharp production artwork at `web/public/colony/antforge-reference-colony.webp`; six state overlays—Queen, Repair, Color, Story, Guard, Treasury—and state-driven pheromone paths.
 - Evidence Rail: five metrics—Network, Tasks settled, Escrow budget, Last inclusion, Latest block—plus event timeline and supported Explorer links.
 - Workflow Strip: five steps—Goal, Split tasks, Ant agents, Verify, Settle—and three proof lanes—Swarm Lane, Skill Guard, Conflict Lane.
 
 Every node, metric, step, and lane derives from `ColonySnapshot` or existing helpers. Loading is explicitly labelled and invents no value; empty data renders an unavailable/no-events state and no unsupported link; errors expose the real wallet, RPC, or contract failure with retry and never imply success or silently substitute Mock. Clearly labelled synthetic Mock values may support the demo but must never be styled or described as Monad Testnet facts; Live evidence may never be fabricated.
 
-The artwork authority is `NeoWeb3Nova/frontend` revision `441886c3f7bbf93b82cacf67cb4bb4afa8084b96`, source path `src/components/MainContent.tsx`. The immutable source bytes are preserved at `web/public/colony/antforge-reference-colony-source.webp` with SHA-256 `394b6bb0e47c40449131fbe29a515c49ba01394a2aa3b7e9b412bbd8c6ec7ab5`. Production uses the target-redacted backdrop at `web/public/colony/antforge-reference-colony.webp` with SHA-256 `693d0bb66aee5c9a39fd3db7491a8417476a074c2c5b9568299a9d793e10819b`. The exact Pillow 12.1.1/libwebp 1.6.0 pipeline applies 39 fixed element-level regions at the intrinsic 512×356 coordinates with feather 6: local blur 10/dark blend 30%, strong blur 12/dark blend 48%, and critical blur 18/dark blend 52%, then WebP quality 90/method 6. Source/output hashes, mask coverage bounds, protected and evidence points, unchanged out-of-mask pixels, deterministic encoding, decodability, and atomic output are checked. This keeps the Queen crystal, central spine, cave structure, lighting, props, and ants sharp while making baked synthetic UI unreadable before CSS. React remains the only visible authority for task and chain state; CSS supplies only a light tint/vignette and foreground ordering, never coordinate masks or whole-artwork filtering.
+Production uses the UI-free colony backdrop at `web/public/colony/antforge-reference-colony.webp`, a 1501×1047 WebP with SHA-256 `5c9430fd8617694a97210f492884f570a357f41844cbfb2a468c187c8b2034af`. The artwork contains no baked labels, numbers, metrics, or synthetic evidence overlays. React remains the only visible authority for task and chain state; CSS supplies only a light tint/vignette and foreground ordering.
 
 ## Motion
 

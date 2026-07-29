@@ -102,6 +102,71 @@ function displayError(error: unknown): string {
   return String(error);
 }
 
+interface WalletRpcProvider {
+  request(args: { method: string; params?: readonly unknown[] }): Promise<unknown>;
+}
+
+function isWalletRpcProvider(value: unknown): value is WalletRpcProvider {
+  return Boolean(
+    value
+      && typeof value === "object"
+      && "request" in value
+      && typeof value.request === "function",
+  );
+}
+
+function isMissingTransactionCountMethod(error: unknown): boolean {
+  const message = displayError(error).toLowerCase();
+  return message.includes("eth_gettransactioncount")
+    && (message.includes("does not exist")
+      || message.includes("not available")
+      || message.includes("method not found")
+      || message.includes("-32601"));
+}
+
+async function ensureWalletRpcReady(
+  connector: { getProvider(): Promise<unknown> },
+  account: Address,
+): Promise<void> {
+  const provider = await connector.getProvider();
+  if (!isWalletRpcProvider(provider)) {
+    throw new Error("The connected wallet does not expose an EIP-1193 provider.");
+  }
+
+  const transactionCountRequest = {
+    method: "eth_getTransactionCount",
+    params: [account, "latest"] as const,
+  };
+  try {
+    await provider.request(transactionCountRequest);
+    return;
+  } catch (error) {
+    if (!isMissingTransactionCountMethod(error)) throw error;
+  }
+
+  try {
+    await provider.request({
+      method: "wallet_addEthereumChain",
+      params: [
+        {
+          chainId: `0x${monadTestnet.id.toString(16)}`,
+          chainName: monadTestnet.name,
+          nativeCurrency: monadTestnet.nativeCurrency,
+          rpcUrls: [monadRpcUrl],
+          blockExplorerUrls: [monadExplorerUrl],
+        },
+      ],
+    });
+    await provider.request(transactionCountRequest);
+  } catch (error) {
+    throw new Error(
+      `Your wallet's Monad Testnet RPC cannot prepare transactions. `
+        + `Change the network RPC URL to ${monadRpcUrl}, then retry. `
+        + `Wallet response: ${displayError(error)}`,
+    );
+  }
+}
+
 function hasTaskId<T extends { args: { taskId?: Hex } }>(
   log: T,
 ): log is T & { args: { taskId: Hex } } {
@@ -189,6 +254,10 @@ export class MonadColonyDataSource implements ColonyDataSource {
       throw new Error(`Switch the wallet to Monad Testnet (${monadTestnet.id}).`);
     }
     const requester = account.address;
+    if (!account.connector) {
+      throw new Error("The connected wallet connector is unavailable.");
+    }
+    await ensureWalletRpcReady(account.connector, requester);
 
     const inputLabels = ["repair", "color", "story"] as const;
     const inputHashes: Record<(typeof inputLabels)[number], Hex> = {
